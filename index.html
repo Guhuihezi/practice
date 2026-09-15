@@ -37,6 +37,10 @@
   .tag.t2 { background:#FFF3E0; color:#B26A00; }
   .tag.t3 { background:#E8F5E9; color:#2E7D32; }
   .tag.t7 { background:#EDE7F6; color:#5E35B1; }
+  .qhead { position:relative; }
+  .favbtn { margin-left:auto; border:none; background:transparent; font-size:22px; line-height:1; color:#C9C5B8; cursor:pointer; padding:6px 10px; border-radius:9px; transition:transform .12s,color .12s; }
+  .favbtn:hover { transform:scale(1.15); }
+  .favbtn.on { color:#F5A623; }
   .qstem { margin-top:14px; font-size:15.5px; line-height:1.8; overflow-wrap:break-word; word-break:break-word; }
   .qstem img { max-width:100%; border-radius:8px; margin-top:6px; display:block; }
   .qstem p { margin:4px 0; }
@@ -155,6 +159,7 @@
     <select id="selType"></select>
     <button class="btn ghost" id="btnShuffle" title="打乱题目顺序">随机序</button>
     <button class="btn ghost" id="btnWrongOnly" title="错题重练：只做错题，答对自动移出">错题模式</button>
+    <button class="btn ghost" id="btnFavOnly" title="只看收藏：把相近的题放一起对比做">只看收藏</button>
     <button class="btn ghost" id="btnStudy" title="背题模式：直接显示答案和解析">背题模式</button>
     <div class="spacer"></div>
     <button class="btn danger ghost" id="btnReset">清空进度</button>
@@ -170,6 +175,7 @@
       <span class="qno" id="qNo">第 1 题</span>
       <span class="tag t1" id="qTag">单选题</span>
       <span class="qno" id="qPoint" style="display:none"></span>
+      <button class="favbtn" id="btnFav" title="收藏本题">☆</button>
     </div>
     <div class="qstem" id="qStem"></div>
 
@@ -230,6 +236,8 @@ let state = {
   shuffle: false,
   wrongOnly: false,
   wrongList: [],   // 错题重练：本轮错题 ID 列表
+  favOnly: false,  // 只看收藏
+  favs: {},        // qstId -> true 收藏集合
   study: false,      // 背题模式：直接显示答案与解析
   order: [],         // 当前范围题目顺序
   idx: 0,
@@ -253,6 +261,7 @@ function buildOrder() {
   const scope = { paper: state.paper, type: state.type };
   let list = ALL.filter(q => inScope(q, scope));
   if (state.wrongOnly) list = list.filter(q => state.wrongList.includes(q.qstId));
+  if (state.favOnly) list = list.filter(q => state.favs[q.qstId]);
   // 单选/多选选项乱序（每个题只乱序一次，判断/填空保持原顺序）
   list.forEach(shuffleOptionsOnce);
   if (state.shuffle) {
@@ -288,11 +297,22 @@ function saveRec() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(state.records)); } catch (e) {}
 }
 const LS_POS = 'xhmo_exam_pos_v1';
+const LS_FAV = 'xhmo_exam_favs_v1';
+function loadFavs() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(LS_FAV)) || [];
+    state.favs = {};
+    arr.forEach(id => { state.favs[id] = true; });
+  } catch (e) { state.favs = {}; }
+}
+function saveFavs() {
+  try { localStorage.setItem(LS_FAV, JSON.stringify(Object.keys(state.favs).map(Number))); } catch (e) {}
+}
 function savePos() {
   try {
     localStorage.setItem(LS_POS, JSON.stringify({
       idx: state.idx, paper: state.paper, type: state.type,
-      shuffle: state.shuffle, wrongOnly: state.wrongOnly, study: state.study
+      shuffle: state.shuffle, wrongOnly: state.wrongOnly, favOnly: state.favOnly, study: state.study
     }));
   } catch (e) {}
 }
@@ -304,6 +324,7 @@ function loadPos() {
     if (p.type) state.type = p.type;
     if (typeof p.shuffle === 'boolean') state.shuffle = p.shuffle;
     if (typeof p.wrongOnly === 'boolean') state.wrongOnly = p.wrongOnly;
+    if (typeof p.favOnly === 'boolean') state.favOnly = p.favOnly;
     if (typeof p.study === 'boolean') state.study = p.study;
   } catch (e) {}
 }
@@ -361,6 +382,10 @@ function renderQuestion() {
   const study = state.study;
   $('qNo').textContent = '第 ' + (state.idx + 1) + ' / ' + state.order.length + ' 题';
   renderProg();
+  // 收藏按钮状态
+  const favBtn = $('btnFav');
+  favBtn.textContent = state.favs[q.qstId] ? '★' : '☆';
+  favBtn.classList.toggle('on', !!state.favs[q.qstId]);
   const tag = $('qTag');
   tag.textContent = q.typeName;
   tag.className = 'tag t' + q.type;
@@ -578,6 +603,25 @@ function initControls() {
     rebuild();
   };
   $('btnStudy').onclick = () => { state.study = !state.study; $('btnStudy').classList.toggle('on', state.study); renderQuestion(); };
+  $('btnFavOnly').onclick = () => {
+    state.favOnly = !state.favOnly;
+    $('btnFavOnly').classList.toggle('on', state.favOnly);
+    state.idx = 0;
+    rebuild();
+  };
+  $('btnFav').onclick = () => {
+    const q = qSel().q;
+    if (state.favs[q.qstId]) {
+      delete state.favs[q.qstId];
+      saveFavs();
+      if (state.favOnly) { toast('已取消收藏，移出列表'); rebuild(); return; }
+    } else {
+      state.favs[q.qstId] = true;
+      saveFavs();
+      toast('已收藏 ★');
+    }
+    renderQuestion();
+  };
   $('btnReset').onclick = () => {
     if (confirm('确定清空全部作答记录？')) {
       state.records = {}; saveRec(); rebuild();
@@ -665,12 +709,14 @@ function toast(msg) {
 // ---------- 启动 ----------
 $('hdTotal').textContent = ALL.length;
 loadRec();
+loadFavs();
 loadPos();
 initControls();
 $('selPaper').value = state.paper;
 $('selType').value = state.type;
 $('btnShuffle').classList.toggle('on', state.shuffle);
 $('btnWrongOnly').classList.toggle('on', state.wrongOnly);
+$('btnFavOnly').classList.toggle('on', state.favOnly);
 $('btnStudy').classList.toggle('on', state.study);
 rebuild();
 padDock();
