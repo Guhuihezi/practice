@@ -154,7 +154,7 @@
     <span class="g">题型</span>
     <select id="selType"></select>
     <button class="btn ghost" id="btnShuffle" title="打乱题目顺序">随机序</button>
-    <button class="btn ghost" id="btnWrongOnly">只看错题</button>
+    <button class="btn ghost" id="btnWrongOnly" title="错题重练：只做错题，答对自动移出">错题模式</button>
     <button class="btn ghost" id="btnStudy" title="背题模式：直接显示答案和解析">背题模式</button>
     <div class="spacer"></div>
     <button class="btn danger ghost" id="btnReset">清空进度</button>
@@ -206,13 +206,13 @@
     </div>
   </div>
 
-  <div class="tip" id="wrongTip">当前为「只看错题」模式，共 <b id="wrongTipN">0</b> 道错题。</div>
+  <div class="tip" id="wrongTip">当前为「错题重练」模式：共 <b id="wrongTipN">0</b> 道错题，答对会自动移出。</div>
 
   <div class="keys" id="keysEl">
     <div class="k-title">快捷键</div>
     <div class="k-row"><span class="k">1 - 4</span><span class="kd">选择 A-D 选项</span></div>
     <div class="k-row"><span class="k">空格/回车</span><span class="kd">确认作答</span></div>
-    <div class="k-row"><span class="k">← →</span><span class="kd">上一题 / 下一题</span></div>
+    <div class="k-row"><span class="k">← → / A D</span><span class="kd">上一题 / 下一题</span></div>
   </div>
 
   <div class="footer">数据提取自讯方模考（HarmonyOS 中级2.0 · 顺序练习） · 仅供个人学习使用 · 作答记录保存在本机浏览器</div>
@@ -229,6 +229,7 @@ let state = {
   type: 'all',       // all | 1|2|3|7
   shuffle: false,
   wrongOnly: false,
+  wrongList: [],   // 错题重练：本轮错题 ID 列表
   study: false,      // 背题模式：直接显示答案与解析
   order: [],         // 当前范围题目顺序
   idx: 0,
@@ -251,7 +252,7 @@ function inScope(q, scope) {
 function buildOrder() {
   const scope = { paper: state.paper, type: state.type };
   let list = ALL.filter(q => inScope(q, scope));
-  if (state.wrongOnly) list = list.filter(q => state.records[q.qstId] && state.records[q.qstId].correct === false);
+  if (state.wrongOnly) list = list.filter(q => state.wrongList.includes(q.qstId));
   // 单选/多选选项乱序（每个题只乱序一次，判断/填空保持原顺序）
   list.forEach(shuffleOptionsOnce);
   if (state.shuffle) {
@@ -467,12 +468,20 @@ function judgeAnswer(q) {
   const correct = isCorrect(q, userAns);
   state.records[q.qstId] = { answer: userAns, correct };
   saveRec();
-  renderQuestion();
-  renderStats();
-  if (correct) {
-    toast('回答正确 ✓');
+  if (state.wrongOnly && correct) {
+    // 错题重练：答对即移出错题列表
+    state.wrongList = state.wrongList.filter(id => id !== q.qstId);
+    toast('回答正确，已移出错题本');
+    rebuild();
   } else {
-    toast('回答错误，已加入错题本');
+    renderQuestion();
+    renderStats();
+    if (q.type === 7) $('fillInput').blur(); // 填空题判分后移出焦点，恢复键盘切题
+    if (correct) {
+      toast('回答正确 ✓');
+    } else {
+      toast('回答错误，已加入错题本');
+    }
   }
 }
 
@@ -549,7 +558,25 @@ function initControls() {
   sp.onchange = () => { state.paper = sp.value; state.idx = 0; rebuild(); };
   st.onchange = () => { state.type = st.value; state.idx = 0; rebuild(); };
   $('btnShuffle').onclick = () => { state.shuffle = !state.shuffle; $('btnShuffle').classList.toggle('on', state.shuffle); state.idx = 0; rebuild(); };
-  $('btnWrongOnly').onclick = () => { state.wrongOnly = !state.wrongOnly; $('btnWrongOnly').classList.toggle('on', state.wrongOnly); state.idx = 0; rebuild(); };
+  $('btnWrongOnly').onclick = () => {
+    state.wrongOnly = !state.wrongOnly;
+    $('btnWrongOnly').classList.toggle('on', state.wrongOnly);
+    if (state.wrongOnly) {
+      // 错题重练：收集错题 ID 并解锁（清掉旧作答记录，重新作答）
+      state.wrongList = [];
+      Object.keys(state.records).forEach(id => {
+        if (state.records[id].correct === false) {
+          state.wrongList.push(Number(id));
+          delete state.records[id];
+        }
+      });
+      if (state.wrongList.length) { saveRec(); toast('已解锁 ' + state.wrongList.length + ' 道错题，开始重练'); }
+    } else {
+      state.wrongList = [];
+    }
+    state.idx = 0;
+    rebuild();
+  };
   $('btnStudy').onclick = () => { state.study = !state.study; $('btnStudy').classList.toggle('on', state.study); renderQuestion(); };
   $('btnReset').onclick = () => {
     if (confirm('确定清空全部作答记录？')) {
@@ -574,17 +601,24 @@ function initControls() {
   $('btnPrev').onclick = () => { if (state.idx > 0) { state.idx--; renderQuestion(); } };
   $('btnNext').onclick = () => { if (state.idx < state.order.length - 1) { state.idx++; renderQuestion(); } };
   $('btnCard').onclick = () => $('cardGrid').classList.toggle('show');
-  $('fillInput').onkeydown = e => { if (e.key === 'Enter') $('btnSubmit').click(); };
+  $('fillInput').onkeydown = e => {
+    if (e.key === 'Enter') {
+      $('btnSubmit').click();
+      $('fillInput').blur(); // 提交后移出焦点，恢复方向键/A/D 切题
+    }
+  };
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    if (e.key === 'ArrowLeft') $('btnPrev').click();
-    if (e.key === 'ArrowRight') $('btnNext').click();
+    const k = e.key;
+    // 上一题：← 或 A；下一题：→ 或 D
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') $('btnPrev').click();
+    if (k === 'ArrowRight' || k === 'd' || k === 'D') $('btnNext').click();
     const q = state.order[state.idx];
     if (!q || state.study || q.type === 7) return; // 背题/填空不用快捷键
-    if (e.key >= '1' && e.key <= '4') {
+    if (k >= '1' && k <= '4') {
       // 主键盘数字 1-4 对应当前显示的 A-D 选项
       const opts = document.querySelectorAll('#qOpts .opt');
-      const i = Number(e.key) - 1;
+      const i = Number(k) - 1;
       if (opts[i]) { e.preventDefault(); opts[i].click(); }
     } else if (e.code === 'Space' || e.code === 'Enter') {
       // 空格或回车：确认作答
