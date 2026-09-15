@@ -211,7 +211,7 @@
   <div class="keys" id="keysEl">
     <div class="k-title">快捷键</div>
     <div class="k-row"><span class="k">1 - 4</span><span class="kd">选择 A-D 选项</span></div>
-    <div class="k-row"><span class="k">空格</span><span class="kd">确认作答</span></div>
+    <div class="k-row"><span class="k">空格/回车</span><span class="kd">确认作答</span></div>
     <div class="k-row"><span class="k">← →</span><span class="kd">上一题 / 下一题</span></div>
   </div>
 
@@ -586,7 +586,8 @@ function initControls() {
       const opts = document.querySelectorAll('#qOpts .opt');
       const i = Number(e.key) - 1;
       if (opts[i]) { e.preventDefault(); opts[i].click(); }
-    } else if (e.code === 'Space') {
+    } else if (e.code === 'Space' || e.code === 'Enter') {
+      // 空格或回车：确认作答
       e.preventDefault();
       $('btnSubmit').click();
     }
