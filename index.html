@@ -6,8 +6,23 @@
 <title>HarmonyOS 中级2.0 · 刷题练习</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F4F3EE; color:#1A1B1C; padding:16px 12px 60px; }
+  body { font-family:'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif; background:#F4F3EE; color:#1A1B1C; padding:16px 12px 60px; user-select:none; -webkit-user-select:none; }
+  /* 学习内容保留可复制：题干 / 答案 / 解析 */
+  .qstem, .qstem img, .result, .result *, .ana, .ans { user-select:text; -webkit-user-select:text; }
   .wrap { max-width:780px; margin:0 auto; }
+
+  .viewbar { position:fixed; left:max(16px, calc(50% - 502px)); top:50%; transform:translateY(-50%); width:96px; background:#fff; border:1px solid #E4E3DD; border-radius:14px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px; z-index:65; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+  .vb-title { font-size:11px; color:#9CA3AF; letter-spacing:2px; }
+  .vb-list { display:flex; flex-direction:column; gap:6px; width:100%; max-height:52vh; overflow-y:auto; }
+  .vb-tab { position:relative; width:100%; padding:7px 4px; text-align:center; font-size:12.5px; font-weight:600; color:#4B5563; border-radius:9px; cursor:pointer; border:1px solid transparent; user-select:none; transition:background .15s,color .15s; }
+  .vb-tab:hover { background:#F2F1EC; }
+  .vb-tab.cur { background:#0E8F8B; color:#fff; }
+  .vb-tab .vt { display:block; font-size:12.5px; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vb-tab .x { position:absolute; top:1px; right:3px; font-size:10px; opacity:.75; cursor:pointer; line-height:1; padding:2px 3px; border-radius:5px; }
+  .vb-tab .x:hover { background:rgba(255,255,255,.25); }
+  .vb-input { width:100%; padding:2px 4px; font-size:12px; font-weight:600; text-align:center; border:1.5px solid #0E8F8B; border-radius:6px; outline:none; background:#fff; color:#1A1B1C; box-sizing:border-box; }
+  .vb-add { width:100%; padding:10px 0; font-size:18px; color:#0E8F8B; background:#EFF6F5; border:none; border-radius:9px; cursor:pointer; line-height:1.2; }
+  .vb-add:hover { background:#DFEFED; }
 
   .header { background:linear-gradient(135deg,#0E8F8B,#0B6E7E); color:#fff; border-radius:16px; padding:18px 20px; box-shadow:0 2px 10px rgba(11,110,126,.18); }
   .header h1 { font-size:20px; font-weight:700; }
@@ -125,8 +140,14 @@
   .keys .kd { color:#6B7280; }
   @media (min-width:1000px){ .keys { display:block; } }
 
+  @media (max-width:959px){
+    body { padding-left:72px; }
+    .viewbar { left:6px; width:64px; }
+    .vb-tab { font-size:11.5px; padding:9px 2px; }
+    .vb-title { font-size:10px; }
+  }
   @media (max-width:480px){
-    body { padding:12px 8px 50px; }
+    body { padding:12px 8px 50px 68px; }
     .qstem { font-size:15px; }
     .opt .val { font-size:14px; }
     .header { padding:16px; }
@@ -140,6 +161,11 @@
 </style>
 </head>
 <body>
+<div class="viewbar" id="viewBar">
+  <div class="vb-title">答题区</div>
+  <div class="vb-list" id="vbList"></div>
+  <button class="vb-add" id="vbAdd" title="新增答题区">＋</button>
+</div>
 <div class="wrap">
 
   <div class="header">
@@ -247,6 +273,8 @@ let state = {
   idx: 0,
   sel: {},           // 当前题作答 {qstId: [选项] 或 {blanks:[...]}}
   records: {},       // qstId -> {answer, correct}
+  views: [],         // 答题区列表 [{id,title,mode,paper,type,idx,shuffleOrder,wrongList}]
+  curView: -1,       // 当前答题区索引
 };
 const LS_KEY = 'xhmo_exam_records_v1';
 
@@ -310,7 +338,9 @@ function saveRec() {
 }
 const LS_POS = 'xhmo_exam_pos_v1';
 const LS_FAV = 'xhmo_exam_favs_v1';
+const LS_VIEW = 'xhmo_exam_views_v1';
 let fillFocusTimer = null; // 填空题自动聚焦计时器
+const MODE_NAMES = { normal:'顺序', shuffle:'乱序', wrong:'错题', fav:'收藏', study:'背题' };
 function loadFavs() {
   try {
     const arr = JSON.parse(localStorage.getItem(LS_FAV)) || [];
@@ -321,13 +351,59 @@ function loadFavs() {
 function saveFavs() {
   try { localStorage.setItem(LS_FAV, JSON.stringify(Object.keys(state.favs).map(Number))); } catch (e) {}
 }
-function savePos() {
+
+// ---------- 答题区（多视图） ----------
+function modeOfState() {
+  if (state.shuffle) return 'shuffle';
+  if (state.wrongOnly) return 'wrong';
+  if (state.favOnly) return 'fav';
+  if (state.study) return 'study';
+  return 'normal';
+}
+// 把当前主 state 存回答题区 v
+function captureView(v) {
+  v.paper = state.paper; v.type = state.type; v.idx = state.idx;
+  v.shuffleOrder = state.shuffleOrder; v.wrongList = state.wrongList;
+  v.mode = modeOfState();
+}
+// 把答题区 v 应用为主 state（路由式切换）
+function applyView(v) {
+  state.paper = v.paper || 'all';
+  state.type = v.type || 'all';
+  state.idx = v.idx || 0;
+  state.shuffleOrder = v.shuffleOrder || null;
+  state.wrongList = v.wrongList || [];
+  state.shuffle = v.mode === 'shuffle';
+  state.wrongOnly = v.mode === 'wrong';
+  state.favOnly = v.mode === 'fav';
+  state.study = v.mode === 'study';
+  $('selPaper').value = state.paper;
+  $('selType').value = state.type;
+  $('btnShuffle').classList.toggle('on', state.shuffle);
+  $('btnWrongOnly').classList.toggle('on', state.wrongOnly);
+  $('btnFavOnly').classList.toggle('on', state.favOnly);
+  $('btnStudy').classList.toggle('on', state.study);
+  rebuild();
+}
+function saveViews() {
+  try { localStorage.setItem(LS_VIEW, JSON.stringify({ views: state.views, cur: state.curView })); } catch (e) {}
+}
+function loadViews() {
   try {
-    localStorage.setItem(LS_POS, JSON.stringify({
-      idx: state.idx, paper: state.paper, type: state.type,
-      shuffle: state.shuffle, wrongOnly: state.wrongOnly, favOnly: state.favOnly, study: state.study
-    }));
+    const d = JSON.parse(localStorage.getItem(LS_VIEW));
+    if (d && Array.isArray(d.views) && d.views.length) {
+      state.views = d.views;
+      state.curView = Math.min(d.cur || 0, d.views.length - 1);
+      return true;
+    }
   } catch (e) {}
+  return false;
+}
+function savePos() {
+  if (state.curView >= 0 && state.views[state.curView]) {
+    captureView(state.views[state.curView]);
+    saveViews();
+  }
 }
 function loadPos() {
   try {
@@ -339,7 +415,88 @@ function loadPos() {
     if (typeof p.wrongOnly === 'boolean') state.wrongOnly = p.wrongOnly;
     if (typeof p.favOnly === 'boolean') state.favOnly = p.favOnly;
     if (typeof p.study === 'boolean') state.study = p.study;
+    if (state.wrongOnly && !state.wrongList.length) {
+      Object.keys(state.records).forEach(id => {
+        if (state.records[id].correct === false) state.wrongList.push(Number(id));
+      });
+    }
   } catch (e) {}
+}
+function nextViewName() {
+  const used = new Set(state.views.map(v => v.title));
+  for (let i = 1; ; i++) {
+    const t = '答题区' + i;
+    if (!used.has(t)) return t;
+  }
+}
+function renderViewBar() {
+  const list = $('vbList');
+  list.innerHTML = '';
+  state.views.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'vb-tab' + (i === state.curView ? ' cur' : '');
+    d.title = (MODE_NAMES[v.mode] || '顺序') + '模式 · 双击改名';
+    d.innerHTML = '<span class="vt">' + esc(v.title) + '</span><span class="x">×</span>';
+    d.onclick = () => switchView(i);
+    d.ondblclick = e => { e.stopPropagation(); renameView(i); };
+    d.querySelector('.x').onclick = e => { e.stopPropagation(); closeView(i); };
+    list.appendChild(d);
+  });
+}
+function renameView(i) {
+  const tabs = document.querySelectorAll('.vb-tab');
+  const d = tabs[i];
+  if (!d || d.querySelector('input')) return;
+  const v = state.views[i];
+  const inp = document.createElement('input');
+  inp.className = 'vb-input';
+  inp.value = v.title;
+  inp.maxLength = 12;
+  inp.onclick = e => e.stopPropagation(); // 防止冒泡触发切换
+  const commit = () => {
+    const t = inp.value.trim();
+    if (t) { v.title = t.slice(0, 12); saveViews(); }
+    renderViewBar();
+  };
+  inp.onkeydown = e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') commit();
+    else if (e.key === 'Escape') renderViewBar();
+  };
+  inp.onblur = commit;
+  d.innerHTML = '';
+  d.appendChild(inp);
+  inp.focus();
+  inp.select();
+}
+function addView() {
+  if (state.views.length >= 8) { toast('答题区最多 8 个'); return; }
+  if (state.curView >= 0) captureView(state.views[state.curView]); // 先存回当前区
+  const v = { id: Date.now(), title: nextViewName(), mode: 'normal', paper: 'all', type: 'all', idx: 0, shuffleOrder: null, wrongList: [] };
+  state.views.push(v);
+  state.curView = state.views.length - 1;
+  applyView(v);
+  renderViewBar();
+  saveViews();
+  toast('已新增 ' + v.title + '（顺序练习，双击可改名）');
+}
+function switchView(i) {
+  if (i === state.curView || i < 0 || i >= state.views.length) return;
+  captureView(state.views[state.curView]);
+  state.curView = i;
+  applyView(state.views[i]);
+  renderViewBar();
+  saveViews();
+}
+function closeView(i) {
+  if (state.views.length <= 1) { toast('至少保留一个答题区'); return; }
+  if (i === state.curView) captureView(state.views[i]); // 关闭当前区前先存回
+  state.views.splice(i, 1);
+  if (state.curView >= state.views.length) state.curView = state.views.length - 1;
+  else if (i < state.curView) state.curView--;
+  applyView(state.views[state.curView]);
+  renderViewBar();
+  saveViews();
 }
 // 页面底部固定导航，正文留出对应高度
 function padDock() {
@@ -758,15 +915,20 @@ function toast(msg) {
 $('hdTotal').textContent = ALL.length;
 loadRec();
 loadFavs();
-loadPos();
+if (!loadViews()) {
+  // 旧版本无答题区数据：用上次位置构造一个默认答题区
+  loadPos();
+  state.views = [{
+    id: 1, title: '答题区1',
+    mode: modeOfState(), paper: state.paper, type: state.type, idx: state.idx,
+    shuffleOrder: state.shuffleOrder, wrongList: state.wrongList
+  }];
+  state.curView = 0;
+}
 initControls();
-$('selPaper').value = state.paper;
-$('selType').value = state.type;
-$('btnShuffle').classList.toggle('on', state.shuffle);
-$('btnWrongOnly').classList.toggle('on', state.wrongOnly);
-$('btnFavOnly').classList.toggle('on', state.favOnly);
-$('btnStudy').classList.toggle('on', state.study);
-rebuild();
+$('vbAdd').onclick = addView;
+applyView(state.views[state.curView]);
+renderViewBar();
 padDock();
 </script>
 </body>
