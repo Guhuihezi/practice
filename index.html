@@ -92,7 +92,9 @@
   .dock .dinner { max-width:780px; margin:0 auto; }
   .dock .result { margin:0 0 10px; max-height:38vh; overflow-y:auto; }
 
-  .cardgrid { position:fixed; left:50%; transform:translateX(-50%); bottom:92px; width:min(92vw,740px); max-height:58vh; overflow-y:auto; background:#fff; border:1px solid #E4E3DD; border-radius:14px; padding:16px; display:none; z-index:60; box-shadow:0 6px 24px rgba(0,0,0,.16); }
+  .cardmask { position:fixed; inset:0; background:rgba(17,24,39,.38); display:none; z-index:59; }
+  .cardmask.show { display:block; }
+  .cardgrid { position:fixed; left:50%; transform:translateX(-50%); bottom:92px; width:min(92vw,740px); max-height:58vh; overflow-y:auto; background:#fff; border:1px solid #E4E3DD; border-radius:14px; padding:16px; display:none; z-index:60; box-shadow:0 6px 24px rgba(0,0,0,.16); user-select:none; -webkit-user-select:none; }
   .cardgrid.show { display:block; }
   .cardgrid .cg-title { font-size:13px; font-weight:700; margin-bottom:12px; color:#374151; }
   .cg { display:grid; grid-template-columns:repeat(auto-fill,minmax(36px,1fr)); gap:8px; }
@@ -202,8 +204,9 @@
     </div>
   </div>
 
+  <div class="cardmask" id="cardMask"></div>
   <div class="cardgrid" id="cardGrid">
-    <div class="cg-title">答题卡（点击跳转）</div>
+    <div class="cg-title">答题卡（点击跳转，点击空白处关闭）</div>
     <div class="cg" id="cgCells"></div>
     <div class="legend">
       <span><i style="background:#fff;border:1.5px solid #E4E3DD"></i>未答</span>
@@ -583,9 +586,19 @@ function renderCard() {
       cell.classList.add(rec.correct ? 'right' : 'wrong');
     }
     cell.textContent = i + 1;
-    cell.onclick = () => { state.idx = i; $('cardGrid').classList.remove('show'); renderQuestion(); };
+    cell.onclick = () => { state.idx = i; closeCard(); renderQuestion(); };
     cg.appendChild(cell);
   });
+}
+function closeCard() {
+  $('cardGrid').classList.remove('show');
+  $('cardMask').classList.remove('show');
+}
+function toggleCard() {
+  if ($('cardGrid').classList.contains('show')) { closeCard(); return; }
+  renderCard();
+  $('cardGrid').classList.add('show');
+  $('cardMask').classList.add('show');
 }
 
 // ---------- 控件 ----------
@@ -677,7 +690,8 @@ function initControls() {
   };
   $('btnPrev').onclick = () => { if (state.idx > 0) { state.idx--; renderQuestion(); } };
   $('btnNext').onclick = () => { if (state.idx < state.order.length - 1) { state.idx++; renderQuestion(); } };
-  $('btnCard').onclick = () => { renderCard(); $('cardGrid').classList.toggle('show'); };
+  $('btnCard').onclick = toggleCard;
+  $('cardMask').onclick = closeCard;
   $('fillInput').onkeydown = e => {
     if (e.key === 'Enter') {
       $('btnSubmit').click();
