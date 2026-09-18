@@ -140,6 +140,34 @@
   .keys .kd { color:#6B7280; }
   @media (min-width:1000px){ .keys { display:block; } }
 
+  .surprise { position:fixed; right:12px; bottom:112px; width:118px; background:#fff; border:1.5px solid #E4E3DD; border-radius:13px; padding:10px 9px; text-align:center; cursor:pointer; z-index:66; box-shadow:0 2px 10px rgba(0,0,0,.08); transition:border-color .2s,box-shadow .2s; }
+  .surprise:hover { border-color:#0E8F8B; }
+  .surprise.unlocked { border-color:#F5A623; box-shadow:0 0 0 3px rgba(245,166,35,.18); }
+  .sp-title { font-size:11.5px; font-weight:700; color:#374151; }
+  .sp-num { font-size:12px; font-weight:700; color:#0E8F8B; margin-top:5px; }
+  .surprise.unlocked .sp-num { color:#F5A623; }
+  .sp-bar { height:6px; background:#EDEBE4; border-radius:99px; overflow:hidden; margin-top:6px; }
+  .sp-bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,#0E8F8B,#3FBF9A); border-radius:99px; transition:width .3s; }
+  .surprise.unlocked .sp-bar i { background:linear-gradient(90deg,#F5A623,#F7C948); }
+
+  .boom { position:fixed; inset:0; background:rgba(17,24,39,.62); display:none; align-items:center; justify-content:center; z-index:99; }
+  .boom.show { display:flex; }
+  .boom-card { background:#fff; border-radius:18px; padding:26px 28px; text-align:center; max-width:min(86vw,370px); box-shadow:0 14px 44px rgba(0,0,0,.28); animation:pop .32s ease; }
+  @keyframes pop { from { transform:scale(.82); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .boom-ribbon { display:inline-block; background:linear-gradient(90deg,#F5A623,#F7C948); color:#fff; font-size:12px; font-weight:700; padding:4px 14px; border-radius:999px; }
+  .boom-title { font-size:18px; margin-top:12px; color:#1A1B1C; }
+  .boom-msg { font-size:14px; color:#4B5563; line-height:1.8; margin-top:10px; min-height:24px; }
+  .boom-actions { display:flex; gap:10px; justify-content:center; margin-top:18px; }
+
+  .pet { position:fixed; right:160px; bottom:290px; z-index:80; cursor:pointer; display:none; flex-direction:column; align-items:center; gap:8px; }
+  .pet.show { display:flex; }
+  .pet-img { width:92px; height:auto; border-radius:0; object-fit:contain; filter:drop-shadow(0 0 3px rgba(0,0,0,.38)) drop-shadow(0 6px 16px rgba(0,0,0,.20)); animation:petFloat 3s ease-in-out infinite; }
+  @keyframes petFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+  .pet-bubble { position:relative; background:#fff; border:1.5px solid #E4E3DD; border-radius:12px; padding:8px 12px; font-size:13px; color:#374151; line-height:1.5; box-shadow:0 2px 10px rgba(0,0,0,.1); max-width:220px; text-align:center; animation:bubblePop .3s ease; }
+  .pet-bubble::after { content:''; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:6px solid transparent; border-top-color:#fff; }
+  @keyframes bubblePop { from { transform:translateY(6px) scale(.92); opacity:0; } to { transform:translateY(0) scale(1); opacity:1; } }
+  .pet .pet-x { display:none; }
+
   @media (max-width:959px){
     body { padding-left:72px; }
     .viewbar { left:6px; width:64px; }
@@ -250,6 +278,29 @@
     <div class="k-row"><span class="k">← → / A D</span><span class="kd">上一题 / 下一题</span></div>
   </div>
 
+  <div class="surprise" id="surprise" title="神秘惊喜">
+    <div class="sp-title">神秘惊喜</div>
+    <div class="sp-num" id="spNum">0 / 20</div>
+    <div class="sp-bar"><i id="spBar"></i></div>
+  </div>
+
+  <div class="boom" id="boomEl">
+    <div class="boom-card">
+      <div class="boom-ribbon">神秘惊喜已解锁</div>
+      <h3 class="boom-title">恭喜！连续答对 20 题</h3>
+      <p class="boom-msg" id="boomMsg"></p>
+      <div class="boom-actions">
+        <button class="btn" id="boomClose">收下</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pet" id="petEl">
+    <div class="pet-bubble" id="petMsg"></div>
+    <span class="pet-x" id="petX">×</span>
+    <img class="pet-img" id="petImg" src="images/pet.png" alt="宠物" />
+  </div>
+
   <div class="footer">数据提取自讯方模考（HarmonyOS 中级2.0 · 顺序练习） · 仅供个人学习使用 · 作答记录保存在本机浏览器</div>
 </div>
 
@@ -275,6 +326,9 @@ let state = {
   records: {},       // qstId -> {answer, correct}
   views: [],         // 答题区列表 [{id,title,mode,paper,type,idx,shuffleOrder,wrongList}]
   curView: -1,       // 当前答题区索引
+  streak: 0,         // 连续答对数（神秘惊喜）
+  surprise: false,   // 神秘惊喜是否已解锁
+  claimed: false,    // 是否已点击领取（领取后宠物常驻）
 };
 const LS_KEY = 'xhmo_exam_records_v1';
 
@@ -339,6 +393,66 @@ function saveRec() {
 const LS_POS = 'xhmo_exam_pos_v1';
 const LS_FAV = 'xhmo_exam_favs_v1';
 const LS_VIEW = 'xhmo_exam_views_v1';
+const LS_SUR = 'xhmo_exam_surprise_v1';
+const MYSTERY_MSGS = [
+  '真正的天赋，是持续刷题的积累。',
+  '你已经超越了 99% 的练习者，继续保持。',
+  '连续答对 20 题——这是专注力的胜利！',
+  '下一站：错题清零，向满分冲刺！',
+  '坚持本身，就是最厉害的技能。',
+  '刷题不止，通关在望。下一题，继续！',
+  '千淘万漉虽辛苦，吹尽狂沙始到金。',
+  '宝剑锋从磨砺出，梅花香自苦寒来。',
+  '会当凌绝顶，一览众山小。',
+  '长风破浪会有时，直挂云帆济沧海。',
+  '路漫漫其修远兮，吾将上下而求索。',
+  '有志者，事竟成，破釜沉舟，百二秦关终属楚。',
+  '苦心人，天不负，卧薪尝胆，三千越甲可吞吴。',
+  '业精于勤荒于嬉，行成于思毁于随。',
+  '雄关漫道真如铁，而今迈步从头越。',
+  '操千曲而后晓声，观千剑而后识器。'
+];
+const PET_MSGS = [
+  '连续答对 20 题，太强了！',
+  '你真是个刷题小能手！',
+  '继续保持，向着满分冲！',
+  '今天的状态满分！',
+  '下一题，继续拿下！',
+  '乘风破浪会有时，直挂云帆济沧海。',
+  '千淘万漉虽辛苦，吹尽狂沙始到金。',
+  '宝剑锋从磨砺出，梅花香自苦寒来。',
+  '路漫漫其修远兮，吾将上下而求索。',
+  '不积跬步，无以至千里；不积小流，无以成江海。',
+  '业精于勤，荒于嬉；行成于思，毁于随。',
+  '操千曲而后晓声，观千剑而后识器。',
+  '会当凌绝顶，一览众山小。',
+  '长风破浪会有时，直挂云帆济沧海。',
+  '雄关漫道真如铁，而今迈步从头越。',
+  '有志者，事竟成，破釜沉舟，百二秦关终属楚。',
+  '苦心人，天不负，卧薪尝胆，三千越甲可吞吴。',
+  '今日长缨在手，何时缚住苍龙？',
+  '专注当下，答案自来。',
+  '每一道错题，都是通往满分的台阶。',
+  '你的坚持，正在被时间看见。',
+  '刷题不止步，通关在眼前。',
+  '稳住节奏，胜利属于你。',
+  '心无旁骛，下笔有神。',
+  '再坚持一下，就是新的高度。'
+];
+const WRONG_MSGS = [
+  '没关系，错一道题，涨一分见识。',
+  '错题是最好的老师，再来一题。',
+  '别灰心，这道题正是你提分的关键。',
+  '错了不可怕，错过不再错就赢了。',
+  '深呼吸，下一题一定会对。',
+  '把这道题记牢，下次就是送分题。',
+  '错题本又添一员，清空它那天你就满分了。',
+  '失败乃成功之母，再来！',
+  '谁还没错过几道题，稳住心态。',
+  '把错题嚼碎了咽下去，营养都是你的。',
+  '错题不可怕，可怕的是不敢面对它。',
+  '这道题放过了，下道题会补偿你。'
+];
 let fillFocusTimer = null; // 填空题自动聚焦计时器
 const MODE_NAMES = { normal:'顺序', shuffle:'乱序', wrong:'错题', fav:'收藏', study:'背题' };
 function loadFavs() {
@@ -350,6 +464,48 @@ function loadFavs() {
 }
 function saveFavs() {
   try { localStorage.setItem(LS_FAV, JSON.stringify(Object.keys(state.favs).map(Number))); } catch (e) {}
+}
+// ---------- 神秘惊喜：连续答对 20 题解锁 ----------
+function loadSur() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_SUR)) || {};
+    state.streak = (d && typeof d.streak === 'number') ? d.streak : 0;
+    state.surprise = !!(d && d.unlocked);
+    state.claimed = !!(d && d.claimed);
+  } catch (e) { state.streak = 0; state.surprise = false; state.claimed = false; }
+}
+function saveSur() {
+  try { localStorage.setItem(LS_SUR, JSON.stringify({ streak: state.streak, unlocked: state.surprise, claimed: state.claimed })); } catch (e) {}
+}
+function renderSurprise() {
+  const el = $('surprise');
+  let txt;
+  if (state.claimed) txt = '已领取 ✓';
+  else if (state.surprise) txt = '点击领取';
+  else txt = state.streak + ' / 20';
+  $('spNum').textContent = txt;
+  $('spBar').style.width = Math.min(100, state.streak / 20 * 100) + '%';
+  el.classList.toggle('unlocked', state.surprise);
+  el.title = state.claimed ? '神秘惊喜已领取，点击再看寄语' :
+             (state.surprise ? '神秘惊喜已就绪，点击领取！' :
+              '连续答对 20 题解锁神秘惊喜（当前 ' + state.streak + '/20）');
+}
+// ---------- 网页宠物：解锁后常驻陪伴 ----------
+function petSay(wrong) {
+  const arr = wrong ? WRONG_MSGS : PET_MSGS;
+  $('petMsg').textContent = arr[Math.floor(Math.random() * arr.length)];
+  $('petMsg').style.animation = 'none';
+  void $('petMsg').offsetWidth;
+  $('petMsg').style.animation = '';
+}
+let petTimer = null;
+function showPet() {
+  petSay();
+  $('petEl').classList.add('show');
+  if (!petTimer) petTimer = setInterval(() => { if ($('petEl').classList.contains('show')) petSay(); }, 5000);
+}
+function hidePet() {
+  $('petEl').classList.remove('show');
 }
 
 // ---------- 答题区（多视图） ----------
@@ -674,10 +830,28 @@ function judgeAnswer(q) {
   const correct = isCorrect(q, userAns);
   state.records[q.qstId] = { answer: userAns, correct };
   saveRec();
+  // 神秘惊喜：连续答对累计，答错清零
+  if (correct) {
+    state.streak++;
+    if (!state.surprise && state.streak >= 20) {
+      state.surprise = true;
+      saveSur();
+      renderSurprise();
+      toast('连续答对 20 题！点右侧金色「神秘惊喜」领取');
+    } else {
+      saveSur();
+      renderSurprise();
+    }
+  } else {
+    state.streak = 0;
+    saveSur();
+    renderSurprise();
+  }
   if (state.wrongOnly && correct) {
     // 错题重练：答对即移出错题列表
     state.wrongList = state.wrongList.filter(id => id !== q.qstId);
     toast('回答正确，已移出错题本');
+    if (state.claimed) petSay(false);
     rebuild();
   } else {
     renderQuestion();
@@ -685,8 +859,10 @@ function judgeAnswer(q) {
     if (q.type === 7) $('fillInput').blur(); // 填空题判分后移出焦点，恢复键盘切题
     if (correct) {
       toast('回答正确 ✓');
+      if (state.claimed) petSay(false);
     } else {
       toast('回答错误，已加入错题本');
+      if (state.claimed) petSay(true);
     }
   }
 }
@@ -849,6 +1025,33 @@ function initControls() {
   $('btnNext').onclick = () => { if (state.idx < state.order.length - 1) { state.idx++; renderQuestion(); } };
   $('btnCard').onclick = toggleCard;
   $('cardMask').onclick = closeCard;
+  $('surprise').onclick = () => {
+    if (!state.surprise) { toast('连续答对 20 题解锁神秘惊喜，当前 ' + state.streak + '/20'); return; }
+    if (!state.claimed) {
+      state.claimed = true;
+      saveSur();
+      renderSurprise();
+      showPet();
+      toast('恭喜领取！宠物来陪你刷题啦');
+    }
+    $('boomMsg').textContent = MYSTERY_MSGS[Math.floor(Math.random() * MYSTERY_MSGS.length)];
+    $('boomEl').classList.add('show');
+  };
+  $('boomClose').onclick = () => $('boomEl').classList.remove('show');
+  $('boomEl').onclick = e => { if (e.target === $('boomEl')) $('boomEl').classList.remove('show'); };
+  $('petEl').onclick = e => { if (e.target.classList.contains('pet-x')) return; petSay(); };
+  $('petX').onclick = e => { e.stopPropagation(); toast('宠物已解锁，不能赶走啦～'); };
+  // 彩蛋：点击"快捷键"三个字直接领取宠物（专属通道，无任何提示）
+  document.addEventListener('click', e => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('k-title') && t.textContent.trim() === '快捷键') {
+      if (state.claimed) return;
+      state.streak = 20; state.surprise = true; state.claimed = true;
+      saveSur(); renderSurprise(); showPet();
+      $('boomMsg').textContent = MYSTERY_MSGS[Math.floor(Math.random() * MYSTERY_MSGS.length)];
+      $('boomEl').classList.add('show');
+    }
+  });
   $('fillInput').onkeydown = e => {
     if (e.key === 'Enter') {
       $('btnSubmit').click();
@@ -915,6 +1118,7 @@ function toast(msg) {
 $('hdTotal').textContent = ALL.length;
 loadRec();
 loadFavs();
+loadSur();
 if (!loadViews()) {
   // 旧版本无答题区数据：用上次位置构造一个默认答题区
   loadPos();
@@ -929,6 +1133,8 @@ initControls();
 $('vbAdd').onclick = addView;
 applyView(state.views[state.curView]);
 renderViewBar();
+renderSurprise();
+if (state.claimed) showPet();
 padDock();
 </script>
 </body>
