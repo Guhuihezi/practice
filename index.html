@@ -239,7 +239,6 @@ let state = {
   favOnly: false,  // 只看收藏
   favs: {},        // qstId -> true 收藏集合
   study: false,      // 背题模式：直接显示答案与解析
-  shuffleOrder: null, // 随机序固定缓存：全量题 ID 洗牌一次后不再变
   order: [],         // 当前范围题目顺序
   idx: 0,
   sel: {},           // 当前题作答 {qstId: [选项] 或 {blanks:[...]}}
@@ -266,18 +265,10 @@ function buildOrder() {
   // 单选/多选选项乱序（每个题只乱序一次，判断/填空保持原顺序）
   list.forEach(shuffleOptionsOnce);
   if (state.shuffle) {
-    // 洗牌结果固定缓存：切模式/筛选时不再重新随机，避免题序乱掉
-    if (!state.shuffleOrder || state.shuffleOrder.length !== ALL.length) {
-      const ids = ALL.map(q => q.qstId);
-      for (let i = ids.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [ids[i], ids[j]] = [ids[j], ids[i]];
-      }
-      state.shuffleOrder = ids;
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
     }
-    const pos = new Map();
-    state.shuffleOrder.forEach((id, i) => pos.set(id, i));
-    list = list.slice().sort((a, b) => pos.get(a.qstId) - pos.get(b.qstId));
   }
   return list;
 }
@@ -307,7 +298,6 @@ function saveRec() {
 }
 const LS_POS = 'xhmo_exam_pos_v1';
 const LS_FAV = 'xhmo_exam_favs_v1';
-let fillFocusTimer = null; // 填空题自动聚焦计时器
 function loadFavs() {
   try {
     const arr = JSON.parse(localStorage.getItem(LS_FAV)) || [];
@@ -365,7 +355,7 @@ function renderStats() {
   $('stRight').textContent = right;
   $('stWrong').textContent = wrong;
   $('stRate').textContent = done ? Math.round(right / done * 100) + '%' : '--';
-  $('wrongTipN').textContent = state.wrongOnly ? state.wrongList.length : wrong;
+  $('wrongTipN').textContent = wrong;
   $('wrongTip').classList.toggle('show', state.wrongOnly);
 }
 
@@ -437,17 +427,6 @@ function renderQuestion() {
   $('btnNext').disabled = state.idx >= state.order.length - 1;
   savePos();
   padDock();
-  // 填空题自动聚焦：切到未答填空 1 秒后才聚焦，留出键盘切题窗口；切题/提交会重置
-  clearTimeout(fillFocusTimer);
-  if (isFill && !study && !rec) {
-    fillFocusTimer = setTimeout(() => {
-      const cur = qSel();
-      if (cur.q.type === 7 && !state.records[cur.q.qstId] && !state.study) {
-        const inp = $('fillInput');
-        if (inp && $('qFill').style.display !== 'none') inp.focus();
-      }
-    }, 1000);
-  }
 }
 
 // 背题模式：直接展示正确答案与解析
@@ -603,19 +582,7 @@ function initControls() {
   });
   sp.onchange = () => { state.paper = sp.value; state.idx = 0; rebuild(); };
   st.onchange = () => { state.type = st.value; state.idx = 0; rebuild(); };
-  $('btnShuffle').onclick = () => {
-    state.shuffle = !state.shuffle;
-    if (!state.shuffle) {
-      state.shuffleOrder = null; // 关闭随机序时清缓存，再开才重新随机
-    } else {
-      // 开启随机序 = 重新刷一轮：清空全部作答记录
-      state.records = {}; state.wrongList = []; state.wrongOnly = false;
-      saveRec();
-      $('btnWrongOnly').classList.remove('on');
-      toast('已清空作答记录，开始新的一轮随机刷题');
-    }
-    $('btnShuffle').classList.toggle('on', state.shuffle); state.idx = 0; rebuild();
-  };
+  $('btnShuffle').onclick = () => { state.shuffle = !state.shuffle; $('btnShuffle').classList.toggle('on', state.shuffle); state.idx = 0; rebuild(); };
   $('btnWrongOnly').onclick = () => {
     state.wrongOnly = !state.wrongOnly;
     $('btnWrongOnly').classList.toggle('on', state.wrongOnly);
@@ -677,7 +644,7 @@ function initControls() {
   };
   $('btnPrev').onclick = () => { if (state.idx > 0) { state.idx--; renderQuestion(); } };
   $('btnNext').onclick = () => { if (state.idx < state.order.length - 1) { state.idx++; renderQuestion(); } };
-  $('btnCard').onclick = () => { renderCard(); $('cardGrid').classList.toggle('show'); };
+  $('btnCard').onclick = () => $('cardGrid').classList.toggle('show');
   $('fillInput').onkeydown = e => {
     if (e.key === 'Enter') {
       $('btnSubmit').click();
@@ -714,7 +681,6 @@ function rebuild() {
     $('qFill').style.display = 'none';
     $('qResult').className = 'result';
     $('qResult').innerHTML = '';
-    renderCard();
     renderProg();
     padDock();
     renderStats();
