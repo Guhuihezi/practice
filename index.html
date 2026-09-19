@@ -99,7 +99,7 @@
   .result .ana .al { font-weight:600; color:#0E8F8B; }
 
   .nav { display:flex; gap:10px; flex-wrap:wrap; }
-  .nav .btn { flex:1; min-width:100px; padding:11px 12px; font-size:14px; border-radius:10px; }
+  .nav .btn { flex:1; min-width:100px; padding:14px 12px; font-size:14px; border-radius:10px; position:relative; z-index:55; }
   .nav .btn:disabled { opacity:.4; cursor:not-allowed; }
 
   /* 底部固定区：答案/解析面板 + 上一题/答题卡/下一题 常驻 */
@@ -166,7 +166,8 @@
   .pet-bubble { position:relative; background:#fff; border:1.5px solid #E4E3DD; border-radius:12px; padding:8px 12px; font-size:13px; color:#374151; line-height:1.5; box-shadow:0 2px 10px rgba(0,0,0,.1); max-width:220px; text-align:center; animation:bubblePop .3s ease; }
   .pet-bubble::after { content:''; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:6px solid transparent; border-top-color:#fff; }
   @keyframes bubblePop { from { transform:translateY(6px) scale(.92); opacity:0; } to { transform:translateY(0) scale(1); opacity:1; } }
-  .pet .pet-x { display:none; }
+  .pet .pet-x { position:absolute; right:-6px; top:-6px; width:20px; height:20px; line-height:18px; text-align:center; font-size:13px; color:#6B7280; background:#fff; border:1.5px solid #E4E3DD; border-radius:50%; cursor:pointer; z-index:2; }
+  .pet .pet-x:hover { background:#F3F4F6; color:#1F2937; }
 
   @media (max-width:959px){
     body { padding-left:72px; }
@@ -413,31 +414,44 @@ const MYSTERY_MSGS = [
   '操千曲而后晓声，观千剑而后识器。'
 ];
 const PET_MSGS = [
-  '连续答对 20 题，太强了！',
-  '你真是个刷题小能手！',
-  '继续保持，向着满分冲！',
-  '今天的状态满分！',
-  '下一题，继续拿下！',
-  '乘风破浪会有时，直挂云帆济沧海。',
-  '千淘万漉虽辛苦，吹尽狂沙始到金。',
+  '漂亮！这题稳了。',
+  '手感火热，继续冲！',
+  '这波操作很丝滑。',
+  '你的正确率在飙升。',
+  '题题拿下，势如破竹。',
+  '好样的，这都能对！',
+  '节奏完美，保持住。',
+  '一眼看穿考点，厉害。',
+  '又对了，你是懂行的。',
+  '答题如行云流水。',
+  '状态拉满，停不下来。',
+  '这题选得果断！',
+  '你这手感，开挂了吧。',
+  '连对！心态稳如老狗。',
+  '考点被你拿捏得死死的。'
+];
+const POET_MSGS = [
+  '山重水复疑无路，柳暗花明又一村。',
+  '不畏浮云遮望眼，自缘身在最高层。',
+  '欲穷千里目，更上一层楼。',
+  '会当凌绝顶，一览众山小。',
+  '天生我材必有用，千金散尽还复来。',
+  '千磨万击还坚劲，任尔东西南北风。',
   '宝剑锋从磨砺出，梅花香自苦寒来。',
+  '长风破浪会有时，直挂云帆济沧海。',
+  '黄沙百战穿金甲，不破楼兰终不还。',
+  '仰天大笑出门去，我辈岂是蓬蒿人。',
+  '雄关漫道真如铁，而今迈步从头越。',
+  '数风流人物，还看今朝。',
+  '路虽远，行则将至；事虽难，做则必成。',
+  '日拱一卒无有尽，功不唐捐终入海。',
+  '千淘万漉虽辛苦，吹尽狂沙始到金。',
   '路漫漫其修远兮，吾将上下而求索。',
   '不积跬步，无以至千里；不积小流，无以成江海。',
   '业精于勤，荒于嬉；行成于思，毁于随。',
   '操千曲而后晓声，观千剑而后识器。',
-  '会当凌绝顶，一览众山小。',
-  '长风破浪会有时，直挂云帆济沧海。',
-  '雄关漫道真如铁，而今迈步从头越。',
   '有志者，事竟成，破釜沉舟，百二秦关终属楚。',
-  '苦心人，天不负，卧薪尝胆，三千越甲可吞吴。',
-  '今日长缨在手，何时缚住苍龙？',
-  '专注当下，答案自来。',
-  '每一道错题，都是通往满分的台阶。',
-  '你的坚持，正在被时间看见。',
-  '刷题不止步，通关在眼前。',
-  '稳住节奏，胜利属于你。',
-  '心无旁骛，下笔有神。',
-  '再坚持一下，就是新的高度。'
+  '苦心人，天不负，卧薪尝胆，三千越甲可吞吴。'
 ];
 const WRONG_MSGS = [
   '没关系，错一道题，涨一分见识。',
@@ -491,8 +505,11 @@ function renderSurprise() {
               '连续答对 20 题解锁神秘惊喜（当前 ' + state.streak + '/20）');
 }
 // ---------- 网页宠物：解锁后常驻陪伴 ----------
-function petSay(wrong) {
-  const arr = wrong ? WRONG_MSGS : PET_MSGS;
+function petSay(kind) {
+  let arr;
+  if (kind === 'wrong') arr = WRONG_MSGS;
+  else if (kind === 'right') arr = PET_MSGS;
+  else arr = POET_MSGS; // 默认（点头/初始）播诗词
   $('petMsg').textContent = arr[Math.floor(Math.random() * arr.length)];
   $('petMsg').style.animation = 'none';
   void $('petMsg').offsetWidth;
@@ -500,9 +517,8 @@ function petSay(wrong) {
 }
 let petTimer = null;
 function showPet() {
-  petSay();
+  petSay('poet');
   $('petEl').classList.add('show');
-  if (!petTimer) petTimer = setInterval(() => { if ($('petEl').classList.contains('show')) petSay(); }, 5000);
 }
 function hidePet() {
   $('petEl').classList.remove('show');
@@ -851,7 +867,7 @@ function judgeAnswer(q) {
     // 错题重练：答对即移出错题列表
     state.wrongList = state.wrongList.filter(id => id !== q.qstId);
     toast('回答正确，已移出错题本');
-    if (state.claimed) petSay(false);
+    if (state.claimed) petSay('right');
     rebuild();
   } else {
     renderQuestion();
@@ -859,10 +875,10 @@ function judgeAnswer(q) {
     if (q.type === 7) $('fillInput').blur(); // 填空题判分后移出焦点，恢复键盘切题
     if (correct) {
       toast('回答正确 ✓');
-      if (state.claimed) petSay(false);
+      if (state.claimed) petSay('right');
     } else {
       toast('回答错误，已加入错题本');
-      if (state.claimed) petSay(true);
+      if (state.claimed) petSay('wrong');
     }
   }
 }
@@ -1033,14 +1049,14 @@ function initControls() {
       renderSurprise();
       showPet();
       toast('恭喜领取！宠物来陪你刷题啦');
+    } else if (!$('petEl').classList.contains('show')) {
+      showPet(); // 已领取但宠物被收起了，直接召唤
     }
-    $('boomMsg').textContent = MYSTERY_MSGS[Math.floor(Math.random() * MYSTERY_MSGS.length)];
-    $('boomEl').classList.add('show');
   };
   $('boomClose').onclick = () => $('boomEl').classList.remove('show');
   $('boomEl').onclick = e => { if (e.target === $('boomEl')) $('boomEl').classList.remove('show'); };
-  $('petEl').onclick = e => { if (e.target.classList.contains('pet-x')) return; petSay(); };
-  $('petX').onclick = e => { e.stopPropagation(); toast('宠物已解锁，不能赶走啦～'); };
+  $('petEl').onclick = e => { if (e.target.classList.contains('pet-x')) return; petSay('poet'); };
+  $('petX').onclick = e => { e.stopPropagation(); hidePet(); toast('宠物已收起，点右下角"神秘惊喜"随时召唤'); };
   // 彩蛋：点击"快捷键"三个字直接领取宠物（专属通道，无任何提示）
   document.addEventListener('click', e => {
     const t = e.target;
