@@ -339,6 +339,7 @@
     <div class="k-row"><span class="k">1 - 4</span><span class="kd">选择 A-D 选项</span></div>
     <div class="k-row"><span class="k">空格/回车</span><span class="kd">确认作答</span></div>
     <div class="k-row"><span class="k">← → / A D</span><span class="kd">上一题 / 下一题</span></div>
+    <div class="k-row"><span class="k">F</span><span class="kd">全屏沉浸模式</span></div>
   </div>
 
   <div class="footer">数据提取自讯方模考（HarmonyOS 中级2.0 · 顺序练习） · 仅供个人学习使用 · 作答记录保存在本机浏览器</div>
@@ -1036,6 +1037,13 @@ function initControls() {
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     const k = e.key;
+    // F：切换全屏沉浸模式
+    if (k === 'f' || k === 'F') {
+      e.preventDefault();
+      if (!document.fullscreenElement) { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+      return;
+    }
     // 上一题：← 或 A；下一题：→ 或 D
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') $('btnPrev').click();
     if (k === 'ArrowRight' || k === 'd' || k === 'D') $('btnNext').click();
