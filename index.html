@@ -121,6 +121,28 @@
   .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:11.5px; color:#6B7280; }
   .legend i { display:inline-block; width:12px; height:12px; border-radius:4px; margin-right:4px; vertical-align:-2px; }
 
+  /* 数据面板 */
+  .statgrid { position:fixed; left:50%; transform:translateX(-50%); bottom:92px; width:min(92vw,680px); max-height:70vh; overflow-y:auto; background:#fff; border:1px solid #E4E3DD; border-radius:14px; padding:16px; display:none; z-index:96; box-shadow:0 6px 24px rgba(0,0,0,.16); user-select:none; -webkit-user-select:none; }
+  .statgrid.show { display:block; }
+  .sg-overview { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:10px; margin-bottom:16px; }
+  .sg-card { background:#F8F7F2; border-radius:10px; padding:12px 10px; text-align:center; }
+  .sg-card .n { font-size:22px; font-weight:700; color:#1A1B1C; }
+  .sg-card .l { font-size:11.5px; color:#6B7280; margin-top:2px; }
+  .sg-card.green .n { color:#0E8F8B; }
+  .sg-card.red .n { color:#B33235; }
+  .sg-section { margin-bottom:16px; }
+  .sg-section-title { font-size:13px; font-weight:700; color:#374151; margin-bottom:10px; }
+  .sg-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .sg-row .lbl { flex:0 0 64px; font-size:12px; color:#4B5563; }
+  .sg-row .bar { flex:1; height:14px; background:#EDEBE4; border-radius:99px; overflow:hidden; }
+  .sg-row .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#0E8F8B,#3FBF9A); transition:width .4s; }
+  .sg-row .num { flex:0 0 88px; font-size:11.5px; color:#6B7280; text-align:right; }
+  .sg-wrong-item { padding:9px 12px; background:#FBE9E9; border:1px solid #F3C2C3; border-radius:9px; margin-bottom:6px; font-size:12.5px; color:#4B5563; cursor:pointer; line-height:1.5; }
+  .sg-wrong-item:hover { background:#F5D5D6; }
+  .sg-wrong-item .wt { font-size:11px; color:#B33235; font-weight:600; margin-bottom:2px; }
+  .sg-empty { font-size:12.5px; color:#9CA3AF; text-align:center; padding:18px 0; }
+  .sg-hint { font-size:11px; color:#9CA3AF; text-align:center; margin-top:6px; }
+
   .prog { margin-top:14px; background:#fff; border-radius:12px; padding:12px 14px; box-shadow:0 1px 4px rgba(0,0,0,.05); }
   .prog .pt { font-size:12.5px; color:#6B7280; margin-bottom:8px; }
   .progbar { height:8px; background:#EDEBE4; border-radius:99px; overflow:hidden; }
@@ -128,6 +150,47 @@
 
   .tip { margin-top:14px; background:#FFF9E8; border:1px solid #F0E0A8; color:#7A5F0E; border-radius:11px; padding:11px 14px; font-size:12.5px; line-height:1.7; display:none; }
   .tip.show { display:block; }
+
+  /* 暗色模式 */
+  body.dark { background:#151617; color:#E5E4E0; }
+  body.dark .viewbar, body.dark .bar, body.dark .qcard, body.dark .prog, body.dark .cardgrid, body.dark .statgrid { background:#232425; border-color:#3A3B3C; color:#E5E4E0; }
+  body.dark .vb-title, body.dark .qno, body.dark .prog .pt, body.dark .sg-row .num, body.dark .sg-hint, body.dark .legend, body.dark .footer { color:#8B8C8D; }
+  body.dark .vb-tab { color:#C5C6C7; }
+  body.dark .vb-tab:hover { background:#2E2F30; }
+  body.dark .vb-input { background:#2A2B2C; color:#E5E4E0; border-color:#0E8F8B; }
+  body.dark .vb-add { background:#1F3A38; color:#5ED1CB; }
+  body.dark .vb-add:hover { background:#274A47; }
+  body.dark select, body.dark .btn { background:#2A2B2C; color:#E5E4E0; border-color:#3A3B3C; }
+  body.dark .btn.ghost { background:transparent; }
+  body.dark .opt { background:#2A2B2C; border-color:#3A3B3C; color:#E5E4E0; }
+  body.dark .opt .k { background:#333435; color:#C5C6C7; }
+  body.dark .opt.sel { border-color:#0E8F8B; background:#1F3A38; }
+  body.dark .opt.right { background:#1F3A38; border-color:#0E8F8B; }
+  body.dark .opt.wrong { background:#3A2323; border-color:#B33235; }
+  body.dark .opt .val { color:#E5E4E0; }
+  body.dark .result.ok { background:#1F3A38; color:#7FD8A8; border-color:#0E8F8B; }
+  body.dark .result.no { background:#3A2323; color:#F0A0A0; border-color:#B33235; }
+  body.dark .ans { color:#7FD8A8; }
+  body.dark .ana { color:#B0B1B2; }
+  body.dark .progbar, body.dark .sg-row .bar { background:#333435; }
+  body.dark .dock { background:#232425; border-top-color:#3A3B3C; }
+  body.dark .sg-card { background:#2A2B2C; }
+  body.dark .sg-card .n { color:#E5E4E0; }
+  body.dark .sg-wrong-item { background:#3A2323; border-color:#7A3030; color:#E5E4E0; }
+  body.dark .sg-wrong-item:hover { background:#4A2A2A; }
+  body.dark .cg .cell { background:#2A2B2C; border-color:#3A3B3C; color:#C5C6C7; }
+  body.dark .cg .cell.done { background:#1F3A38; border-color:#0E8F8B; color:#7FD8A8; }
+  body.dark .cg .cell.wrong { background:#3A2323; border-color:#B33235; color:#F0A0A0; }
+  body.dark .cg .cell.right { background:#1F3A38; border-color:#0E8F8B; color:#7FD8A8; }
+  body.dark .tag.t1 { background:#1A3A52; color:#7AB8E0; }
+  body.dark .tag.t2 { background:#4A3510; color:#E8B860; }
+  body.dark .tag.t3 { background:#1F3A24; color:#7FD8A8; }
+  body.dark .tag.t7 { background:#2E2545; color:#B09AE0; }
+  body.dark .keys { background:#232425; border-color:#3A3B3C; color:#E5E4E0; }
+  body.dark .keys .k { background:#333435; color:#5ED1CB; }
+  body.dark .favbtn { color:#555657; }
+  body.dark .favbtn.on { color:#F5A623; }
+  .theme-toggle { width:38px; height:38px; flex:0 0 38px; align-items:center; justify-content:center; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3); border-radius:8px; font-size:18px; color:#fff; cursor:pointer; }
 
   .footer { text-align:center; font-size:11.5px; color:#9CA3AF; margin-top:22px; line-height:1.8; }
 
@@ -141,6 +204,7 @@
   @media (min-width:1000px){ .keys { display:block; } }
 
   .header-top { display:flex; align-items:center; gap:10px; }
+  .header-top h1 { flex:1; }
   .hamburger { display:none; width:38px; height:38px; flex:0 0 38px; align-items:center; justify-content:center; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3); border-radius:8px; font-size:18px; color:#fff; cursor:pointer; }
   .hamburger:active { background:rgba(255,255,255,.3); }
   .vb-mask { display:none; position:fixed; inset:0; background:rgba(0,0,0,.3); z-index:69; }
@@ -179,6 +243,7 @@
     <div class="header-top">
       <button class="hamburger" id="hamburgerBtn" title="答题区">☰</button>
       <h1>HarmonyOS 中级2.0 · 刷题练习</h1>
+      <button class="theme-toggle" id="themeBtn" title="切换暗色/亮色">🌙</button>
     </div>
     <div class="sub">数据来源：讯方模考小程序 · 共 <b id="hdTotal">0</b> 题（3 套卷）</div>
     <div class="stats">
@@ -199,6 +264,7 @@
     <button class="btn ghost" id="btnWrongOnly" title="错题重练：只做错题，答对自动移出">错题模式</button>
     <button class="btn ghost" id="btnFavOnly" title="只看收藏：把相近的题放一起对比做">只看收藏</button>
     <button class="btn ghost" id="btnStudy" title="背题模式：直接显示答案和解析">背题模式</button>
+    <button class="btn ghost" id="btnStats" title="刷题数据面板">数据</button>
     <div class="spacer"></div>
     <button class="btn danger ghost" id="btnReset">清空进度</button>
   </div>
@@ -252,6 +318,21 @@
   </div>
 
   <div class="tip" id="wrongTip">当前为「错题重练」模式：共 <b id="wrongTipN">0</b> 道错题，答对会自动移出。</div>
+
+  <div class="cardmask" id="statMask"></div>
+  <div class="statgrid" id="statGrid">
+    <div class="cg-title">刷题数据面板</div>
+    <div class="sg-overview" id="sgOverview"></div>
+    <div class="sg-section">
+      <div class="sg-section-title">各题型正确率</div>
+      <div id="sgTypes"></div>
+    </div>
+    <div class="sg-section">
+      <div class="sg-section-title">易错题目 Top 5（点击跳转）</div>
+      <div id="sgWrong"></div>
+    </div>
+    <div class="sg-hint">数据来自本机浏览器作答记录，清空进度会重置</div>
+  </div>
 
   <div class="keys" id="keysEl">
     <div class="k-title">快捷键</div>
@@ -763,13 +844,85 @@ function closeCard() {
 }
 function toggleCard() {
   if ($('cardGrid').classList.contains('show')) { closeCard(); return; }
+  closeStats();
   renderCard();
   $('cardGrid').classList.add('show');
   $('cardMask').classList.add('show');
 }
 
+// ---------- 数据面板 ----------
+function openStats() {
+  if ($('statGrid').classList.contains('show')) { closeStats(); return; }
+  closeCard();
+  // 总览
+  let done = 0, right = 0, wrong = 0;
+  const byType = {1:{d:0,r:0}, 2:{d:0,r:0}, 3:{d:0,r:0}, 7:{d:0,r:0}};
+  const wrongList = [];
+  ALL.forEach(q => {
+    const r = state.records[q.qstId];
+    if (!r) return;
+    done++;
+    if (r.correct) right++; else wrong++;
+    if (byType[q.type]) { byType[q.type].d++; if (r.correct) byType[q.type].r++; }
+    if (!r.correct) wrongList.push(q);
+  });
+  const rate = done ? Math.round(right / done * 100) : 0;
+  $('sgOverview').innerHTML =
+    '<div class="sg-card"><div class="n">' + done + '</div><div class="l">已作答</div></div>' +
+    '<div class="sg-card green"><div class="n">' + right + '</div><div class="l">答对</div></div>' +
+    '<div class="sg-card red"><div class="n">' + wrong + '</div><div class="l">答错</div></div>' +
+    '<div class="sg-card"><div class="n">' + rate + '%</div><div class="l">正确率</div></div>';
+  // 题型正确率
+  const tn = {1:'单选',2:'多选',3:'判断',7:'填空'};
+  let th = '';
+  [1,2,3,7].forEach(t => {
+    const d = byType[t].d, r = byType[t].r;
+    if (!d) { th += '<div class="sg-row"><span class="lbl">' + tn[t] + '</span><div class="bar"></div><span class="num">未作答</span></div>'; return; }
+    const pct = Math.round(r / d * 100);
+    th += '<div class="sg-row"><span class="lbl">' + tn[t] + '</span><div class="bar"><i style="width:' + pct + '%"></i></div><span class="num">' + pct + '%（' + r + '/' + d + '）</span></div>';
+  });
+  $('sgTypes').innerHTML = th;
+  // 易错 Top 5
+  if (!wrongList.length) {
+    $('sgWrong').innerHTML = '<div class="sg-empty">暂无错题，继续保持！</div>';
+  } else {
+    let wh = '';
+    wrongList.slice(0, 5).forEach((q, i) => {
+      const idx = state.order.findIndex(x => x.qstId === q.qstId);
+      const stem = (q.stem || '').replace(/<[^>]+>/g, '').slice(0, 50);
+      wh += '<div class="sg-wrong-item" data-qid="' + q.qstId + '"><div class="wt">' + (i+1) + '. ' + (tn[q.type]||'') + ' · 答错</div>' + esc(stem) + (stem.length>=50?'…':'') + '</div>';
+    });
+    $('sgWrong').innerHTML = wh;
+    $('sgWrong').querySelectorAll('.sg-wrong-item').forEach(el => {
+      el.onclick = () => {
+        const qid = Number(el.dataset.qid);
+        const idx = state.order.findIndex(x => x.qstId === qid);
+        if (idx >= 0) { state.idx = idx; closeStats(); renderQuestion(); }
+      };
+    });
+  }
+  $('statGrid').classList.add('show');
+  $('statMask').classList.add('show');
+}
+function closeStats() {
+  $('statGrid').classList.remove('show');
+  $('statMask').classList.remove('show');
+}
+
 // ---------- 控件 ----------
 function initControls() {
+  // 暗色模式
+  const LS_THEME = 'xhmo_theme_v1';
+  function applyTheme(dark) {
+    document.body.classList.toggle('dark', dark);
+    $('themeBtn').textContent = dark ? '☀️' : '🌙';
+    try { localStorage.setItem(LS_THEME, dark ? 'dark' : 'light'); } catch (e) {}
+  }
+  let savedTheme = 'light';
+  try { savedTheme = localStorage.getItem(LS_THEME) || 'light'; } catch (e) {}
+  applyTheme(savedTheme === 'dark');
+  $('themeBtn').onclick = () => applyTheme(!document.body.classList.contains('dark'));
+
   const sp = $('selPaper');
   sp.innerHTML = '<option value="all">全部试卷（252题）</option>';
   DATA.papers.forEach(p => {
@@ -859,6 +1012,8 @@ function initControls() {
   $('btnNext').onclick = () => { if (state.idx < state.order.length - 1) { state.idx++; renderQuestion(); } };
   $('btnCard').onclick = toggleCard;
   $('cardMask').onclick = closeCard;
+  $('btnStats').onclick = openStats;
+  $('statMask').onclick = closeStats;
   // 手机端：汉堡按钮开关答题区
   function toggleVB(open) {
     const vb = $('viewBar'), mask = $('vbMask');
