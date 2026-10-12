@@ -147,6 +147,7 @@
   .prog .pt { font-size:12.5px; color:#6B7280; margin-bottom:8px; }
   .progbar { height:8px; background:#EDEBE4; border-radius:99px; overflow:hidden; }
   .progbar i { display:block; height:100%; background:linear-gradient(90deg,#0E8F8B,#3FBF9A); border-radius:99px; transition:width .3s; width:0; }
+  #examTimer.warn { color:#B33235 !important; }
 
   .tip { margin-top:14px; background:#FFF9E8; border:1px solid #F0E0A8; color:#7A5F0E; border-radius:11px; padding:11px 14px; font-size:12.5px; line-height:1.7; display:none; }
   .tip.show { display:block; }
@@ -265,12 +266,13 @@
     <button class="btn ghost" id="btnFavOnly" title="只看收藏：把相近的题放一起对比做">只看收藏</button>
     <button class="btn ghost" id="btnStudy" title="背题模式：直接显示答案和解析">背题模式</button>
     <button class="btn ghost" id="btnStats" title="刷题数据面板">数据</button>
+    <button class="btn ghost" id="btnExam" title="模拟考试：随机抽60题，满分100分">模拟考试</button>
     <div class="spacer"></div>
     <button class="btn danger ghost" id="btnReset">清空进度</button>
   </div>
 
   <div class="prog">
-    <div class="pt"><span id="progText">进度 0/0</span></div>
+    <div class="pt"><span id="progText">进度 0/0</span><span id="examTimer" style="float:right;font-weight:700;color:#0E8F8B;display:none;">60:00</span></div>
     <div class="progbar"><i id="progBar"></i></div>
   </div>
 
@@ -331,6 +333,10 @@
       <div class="sg-section-title">易错题目 Top 5（点击跳转）</div>
       <div id="sgWrong"></div>
     </div>
+    <div class="sg-section">
+      <div class="sg-section-title">模拟考试历史（最近 10 次）</div>
+      <div id="sgExam"></div>
+    </div>
     <div class="sg-hint">数据来自本机浏览器作答记录，清空进度会重置</div>
   </div>
 
@@ -367,8 +373,10 @@ let state = {
   records: {},       // qstId -> {answer, correct}
   views: [],         // 答题区列表 [{id,title,mode,paper,type,idx,shuffleOrder,wrongList}]
   curView: -1,       // 当前答题区索引
+  exam: null,        // 模拟考试 { startAt, answers: {qid: bool} }
 };
 const LS_KEY = 'xhmo_exam_records_v1';
+const LS_EXAM = 'xhmo_exam_history_v1';
 
 // ---------- 数据准备 ----------
 const ALL = [];
@@ -764,6 +772,19 @@ function judgeAnswer(q) {
     userAns = q.type === 2 ? cur.sort().join('') : (cur[0] || '');
   }
   const correct = isCorrect(q, userAns);
+  if (state.exam) {
+    // 考试模式：只记对错，不污染正常刷题记录
+    state.exam.answers[q.qstId] = correct;
+    renderQuestion();
+    renderStats();
+    if (q.type === 7) $('fillInput').blur();
+    // 答完所有题自动交卷
+    const answered = Object.keys(state.exam.answers).length;
+    if (answered >= state.order.length) {
+      setTimeout(submitExam, 400);
+    }
+    return;
+  }
   state.records[q.qstId] = { answer: userAns, correct };
   saveRec();
   if (state.wrongOnly && correct) {
@@ -902,12 +923,87 @@ function openStats() {
       };
     });
   }
+  // 模拟考试历史
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem(LS_EXAM)) || []; } catch (e) {}
+  if (!hist.length) {
+    $('sgExam').innerHTML = '<div class="sg-empty">暂无模拟考试记录</div>';
+  } else {
+    let eh = '';
+    hist.slice(0, 10).forEach(h => {
+      const min = Math.floor(h.duration/60), sec = h.duration%60;
+      eh += '<div class="sg-wrong-item" style="background:#F0FAF9;border-color:#0E8F8B;"><div class="wt" style="color:#0E8F8B;">' + h.date + '</div>得分 <b>' + h.score + '</b>/100 · 答对 ' + h.right + '/60 · 用时 ' + min + '分' + sec + '秒</div>';
+    });
+    $('sgExam').innerHTML = eh;
+  }
   $('statGrid').classList.add('show');
   $('statMask').classList.add('show');
 }
 function closeStats() {
   $('statGrid').classList.remove('show');
   $('statMask').classList.remove('show');
+}
+
+// ---------- 模拟考试 ----------
+function startExam() {
+  if (!confirm('开始模拟考试？将从全部题库随机抽取 60 题，满分 100 分。')) return;
+  const ids = ALL.map(q => q.qstId);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  const picked = ids.slice(0, 60).map(id => ALL.find(q => q.qstId === id));
+  state.exam = { startAt: Date.now(), answers: {}, timer: null, endAt: Date.now() + 3600 * 1000 };
+  state.order = picked;
+  state.idx = 0;
+  state.sel = {};
+  $('btnExam').classList.add('on');
+  $('btnExam').textContent = '交卷';
+  const timerEl = $('examTimer');
+  timerEl.style.display = 'inline';
+  timerEl.classList.remove('warn');
+  function tick() {
+    if (!state.exam) return;
+    const left = Math.max(0, Math.round((state.exam.endAt - Date.now()) / 1000));
+    const m = Math.floor(left / 60), s = left % 60;
+    timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    if (left <= 300) timerEl.classList.add('warn'); // 最后5分钟变红
+    if (left <= 0) { clearInterval(state.exam.timer); alert('时间到，自动交卷！'); submitExam(); }
+  }
+  tick();
+  state.exam.timer = setInterval(tick, 1000);
+  toast('模拟考试开始，共 60 题，限时 1 小时');
+  rebuild();
+}
+function submitExam() {
+  if (!state.exam) return;
+  const list = state.order;
+  let right = 0, done = 0;
+  list.forEach(q => {
+    const a = state.exam.answers[q.qstId];
+    if (a === true) right++;
+    if (a !== undefined) done++;
+  });
+  // 满分100，每题 100/60，四舍五入
+  const score = Math.round(right / 60 * 100);
+  const duration = Math.round((Date.now() - state.exam.startAt) / 1000);
+  const rec = {
+    date: new Date().toLocaleString('zh-CN'),
+    right, wrong: 60 - right, done, score, duration
+  };
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem(LS_EXAM)) || []; } catch (e) {}
+  hist.unshift(rec);
+  if (hist.length > 50) hist = hist.slice(0, 50);
+  try { localStorage.setItem(LS_EXAM, JSON.stringify(hist)); } catch (e) {}
+  if (state.exam && state.exam.timer) clearInterval(state.exam.timer);
+  state.exam = null;
+  $('btnExam').classList.remove('on');
+  $('btnExam').textContent = '模拟考试';
+  $('examTimer').style.display = 'none';
+  $('examTimer').classList.remove('warn');
+  alert('考试交卷！\n\n得分：' + score + ' / 100\n答对：' + right + ' / 60\n用时：' + Math.floor(duration/60) + '分' + (duration%60) + '秒');
+  rebuild();
 }
 
 // ---------- 控件 ----------
@@ -1015,6 +1111,10 @@ function initControls() {
   $('cardMask').onclick = closeCard;
   $('btnStats').onclick = openStats;
   $('statMask').onclick = closeStats;
+  $('btnExam').onclick = () => {
+    if (state.exam) submitExam();
+    else startExam();
+  };
   // 手机端：汉堡按钮开关答题区
   function toggleVB(open) {
     const vb = $('viewBar'), mask = $('vbMask');
@@ -1063,7 +1163,7 @@ function initControls() {
 }
 
 function rebuild() {
-  state.order = buildOrder();
+  if (!state.exam) state.order = buildOrder();
   if (state.order.length === 0) {
     $('stTotal').textContent = 0;
     $('qStem').innerHTML = '<p style="color:#9CA3AF">当前筛选下没有题目。</p>';
