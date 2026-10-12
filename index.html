@@ -71,10 +71,10 @@
   .opt .val img { max-width:100%; border-radius:6px; margin-top:4px; }
   .opt.sel { border-color:#0E8F8B; background:#F0FAF9; }
   .opt.sel .key { background:#0E8F8B; color:#fff; }
-  .opt.right { border-color:#389E0D; background:#B7EB8F; }
-  .opt.right .key { background:#389E0D; color:#fff; }
-  .opt.wrong { border-color:#CF1322; background:#FFA39E; }
-  .opt.wrong .key { background:#CF1322; color:#fff; }
+  .opt.right { border-color:#95DE64; background:#F6FFED; }
+  .opt.right .key { background:#52C41A; color:#fff; }
+  .opt.wrong { border-color:#FFA39E; background:#FFF1F0; }
+  .opt.wrong .key { background:#FF4D4F; color:#fff; }
   .opt.disabled { cursor:default; }
 
   .fillbox { margin-top:16px; }
@@ -166,8 +166,8 @@
   body.dark .opt { background:#2A2B2C; border-color:#3A3B3C; color:#E5E4E0; }
   body.dark .opt .k { background:#333435; color:#C5C6C7; }
   body.dark .opt.sel { border-color:#0E8F8B; background:#1F3A38; }
-  body.dark .opt.right { background:#23703F; border-color:#52C41A; }
-  body.dark .opt.wrong { background:#7A2728; border-color:#FF7875; }
+  body.dark .opt.right { background:#1F3A2A; border-color:#389E0D; }
+  body.dark .opt.wrong { background:#3A2323; border-color:#CF1322; }
   body.dark .opt .val { color:#E5E4E0; }
   body.dark .result.ok { background:#1F3A38; color:#7FD8A8; border-color:#0E8F8B; }
   body.dark .result.no { background:#3A2323; color:#F0A0A0; border-color:#B33235; }
@@ -829,8 +829,8 @@ function judgeAnswer(q) {
 
 function isCorrect(q, userAns) {
   if (q.type === 7) {
-    const want = q.answer.map(a => String(a).trim().toLowerCase());
-    const got = (userAns || []).map(a => String(a).trim().toLowerCase());
+    const want = q.answer.map(a => String(a).trim());
+    const got = (userAns || []).map(a => String(a).trim());
     if (want.length !== got.length) return false;
     return want.every((w, i) => w === got[i]);
   }
@@ -1201,14 +1201,18 @@ function initControls() {
     renderQuestion();
   };
   $('btnReset').onclick = () => {
-    if (confirm('确定清空全部作答记录？\n\n（错题本会保留，方便继续刷错题）')) {
-      // 保留错题（correct=false），只清答对的记录
-      const kept = {};
-      Object.keys(state.records).forEach(k => {
-        if (!state.records[k].correct) kept[k] = state.records[k];
+    if (confirm('确定清空全部作答记录？\n\n（错题已加入错题本，可在错题模式重新刷）')) {
+      // 收集错题 ID，加入错题本；清空所有作答
+      state.wrongList = [];
+      Object.keys(state.records).forEach(id => {
+        if (!state.records[id].correct) state.wrongList.push(Number(id));
       });
-      state.records = kept;
-      saveRec(); rebuild();
+      state.records = {};
+      state.wrongOnly = false;
+      $('btnWrongOnly').classList.remove('on');
+      saveRec();
+      toast('已清空，' + state.wrongList.length + ' 道错题已加入错题本');
+      rebuild();
     }
   };
   $('btnSubmit').onclick = () => {
