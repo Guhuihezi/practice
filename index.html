@@ -71,10 +71,10 @@
   .opt .val img { max-width:100%; border-radius:6px; margin-top:4px; }
   .opt.sel { border-color:#0E8F8B; background:#F0FAF9; }
   .opt.sel .key { background:#0E8F8B; color:#fff; }
-  .opt.right { border-color:#52C41A; background:#F4FBF1; }
-  .opt.right .key { background:#52C41A; color:#fff; }
-  .opt.wrong { border-color:#EA6668; background:#FEF4F4; }
-  .opt.wrong .key { background:#EA6668; color:#fff; }
+  .opt.right { border-color:#389E0D; background:#B7EB8F; }
+  .opt.right .key { background:#389E0D; color:#fff; }
+  .opt.wrong { border-color:#CF1322; background:#FFA39E; }
+  .opt.wrong .key { background:#CF1322; color:#fff; }
   .opt.disabled { cursor:default; }
 
   .fillbox { margin-top:16px; }
@@ -166,8 +166,8 @@
   body.dark .opt { background:#2A2B2C; border-color:#3A3B3C; color:#E5E4E0; }
   body.dark .opt .k { background:#333435; color:#C5C6C7; }
   body.dark .opt.sel { border-color:#0E8F8B; background:#1F3A38; }
-  body.dark .opt.right { background:#1F3A38; border-color:#0E8F8B; }
-  body.dark .opt.wrong { background:#3A2323; border-color:#B33235; }
+  body.dark .opt.right { background:#23703F; border-color:#52C41A; }
+  body.dark .opt.wrong { background:#7A2728; border-color:#FF7875; }
   body.dark .opt .val { color:#E5E4E0; }
   body.dark .result.ok { background:#1F3A38; color:#7FD8A8; border-color:#0E8F8B; }
   body.dark .result.no { background:#3A2323; color:#F0A0A0; border-color:#B33235; }
@@ -712,8 +712,9 @@ function renderQuestion() {
   syncOptsUI(q);
   if (study) renderStudyResult(q); else renderResult(q, rec);
   renderCard();
-  $('btnSubmit').style.display = study ? 'none' : '';
-  $('btnClearAns').style.display = study ? 'none' : '';
+  const answered = !!(rec || study);
+  $('btnSubmit').style.display = answered ? 'none' : '';
+  $('btnClearAns').style.display = answered ? 'none' : '';
   $('btnPrev').disabled = state.idx === 0;
   $('btnNext').disabled = state.idx >= state.order.length - 1;
   savePos();
@@ -780,9 +781,13 @@ function syncOptsUI(q) {
       if (String(q.answer).split('').includes(o)) el.classList.add('right');
     } else if (rec) {
       el.classList.add('disabled');
-      const ans = String(rec.answer);
-      if (ans.includes(o)) el.classList.add('right');
-      else if (cur.includes(o)) el.classList.add('wrong');
+      const correctAns = String(q.answer);
+      const userAns = Array.isArray(rec.answer) ? rec.answer.join('') : String(rec.answer);
+      if (correctAns.includes(o)) {
+        el.classList.add('right'); // 正确答案绿色
+      } else if (userAns.includes(o)) {
+        el.classList.add('wrong'); // 选错的红色
+      }
     }
   });
   $('btnClearAns').style.visibility = (rec || study) ? 'hidden' : 'visible';
