@@ -1201,8 +1201,14 @@ function initControls() {
     renderQuestion();
   };
   $('btnReset').onclick = () => {
-    if (confirm('确定清空全部作答记录？')) {
-      state.records = {}; saveRec(); rebuild();
+    if (confirm('确定清空全部作答记录？\n\n（错题本会保留，方便继续刷错题）')) {
+      // 保留错题（correct=false），只清答对的记录
+      const kept = {};
+      Object.keys(state.records).forEach(k => {
+        if (!state.records[k].correct) kept[k] = state.records[k];
+      });
+      state.records = kept;
+      saveRec(); rebuild();
     }
   };
   $('btnSubmit').onclick = () => {
