@@ -607,13 +607,29 @@ function padDock() {
 // ---------- 渲染 ----------
 function qSel() {
   const q = state.order[state.idx];
-  const rec = state.records[q.qstId];
+  let rec = state.records[q.qstId];
+  // 考试模式：未交卷前不显示任何对错
+  if (state.exam && !state.exam.submitted) rec = null;
   return { q, rec };
 }
 
 function renderStats() {
   const total = state.order.length;
   let done = 0, right = 0, wrong = 0;
+  if (state.exam && !state.exam.submitted) {
+    state.order.forEach(q => {
+      const p = state.exam.picks[q.qstId];
+      if (p && p.length && (p[0] || '').toString().trim()) done++;
+    });
+    $('stTotal').textContent = total;
+    $('stDone').textContent = done;
+    $('stRight').textContent = '--';
+    $('stWrong').textContent = '--';
+    $('stRate').textContent = total ? Math.round(done/total*100) + '%' : '--';
+    $('wrongTipN').textContent = 0;
+    $('wrongTip').classList.remove('show');
+    return;
+  }
   state.order.forEach(q => {
     const r = state.records[q.qstId];
     if (!r) return;
@@ -677,7 +693,12 @@ function renderQuestion() {
   }
   // 回显
   state.sel = {};
-  if (rec && !study) {
+  if (state.exam && !state.exam.submitted) {
+    // 考试时从 picks 回显
+    const p = state.exam.picks[q.qstId];
+    if (p) state.sel[q.qstId] = p.slice();
+    if (isFill) $('fillInput').value = (p || [''])[0] || '';
+  } else if (rec && !study) {
     const ans = rec.answer;
     if (isFill) {
       $('fillInput').value = Array.isArray(ans) ? ans[0] || '' : ans || '';
@@ -725,24 +746,30 @@ function renderStudyResult(q) {
 }
 
 function pickOption(q, order, el) {
-  const rec = state.records[q.qstId];
-  if (rec) return; // 已判分不可改
+  // 考试时忽略正常刷题记录
+  const rec = state.exam ? null : state.records[q.qstId];
+  if (rec) return;
+  if (state.exam && state.exam.submitted) return;
   const key = q.qstId;
-  const cur = state.sel[key] || [];
+  const store = state.exam ? state.exam.picks : state.sel;
+  const cur = (store[key] || []).slice();
   if (q.type === 2) {
     const i = cur.indexOf(order);
     if (i >= 0) cur.splice(i, 1); else cur.push(order);
     cur.sort();
-    state.sel[key] = cur;
+    store[key] = cur;
   } else {
-    state.sel[key] = [order];
+    store[key] = [order];
   }
+  if (state.exam) state.sel[key] = store[key];
   syncOptsUI(q);
+  if (state.exam) renderStats();
 }
 
 function syncOptsUI(q) {
   const cur = state.sel[q.qstId] || [];
-  const rec = state.records[q.qstId];
+  // 考试时忽略正常刷题记录，不显示旧对错
+  const rec = state.exam ? null : state.records[q.qstId];
   const study = state.study;
   document.querySelectorAll('#qOpts .opt').forEach(el => {
     const o = el.dataset.order;
@@ -773,16 +800,7 @@ function judgeAnswer(q) {
   }
   const correct = isCorrect(q, userAns);
   if (state.exam) {
-    // 考试模式：只记对错，不污染正常刷题记录
-    state.exam.answers[q.qstId] = correct;
-    renderQuestion();
-    renderStats();
-    if (q.type === 7) $('fillInput').blur();
-    // 答完所有题自动交卷
-    const answered = Object.keys(state.exam.answers).length;
-    if (answered >= state.order.length) {
-      setTimeout(submitExam, 400);
-    }
+    // 考试模式：不即时判分，交卷时统一判
     return;
   }
   state.records[q.qstId] = { answer: userAns, correct };
@@ -848,7 +866,11 @@ function renderCard() {
   const cg = $('cgCells');
   cg.innerHTML = '';
   state.order.forEach((q, i) => {
-    const rec = state.records[q.qstId];
+    let rec = state.records[q.qstId];
+    if (state.exam && !state.exam.submitted) {
+      const p = state.exam.picks[q.qstId];
+      rec = (p && p.length) ? { correct: true } : null;
+    }
     const cell = document.createElement('div');
     cell.className = 'cell';
     if (i === state.idx) cell.classList.add('cur');
@@ -930,11 +952,48 @@ function openStats() {
     $('sgExam').innerHTML = '<div class="sg-empty">暂无模拟考试记录</div>';
   } else {
     let eh = '';
-    hist.slice(0, 10).forEach(h => {
+    hist.slice(0, 10).forEach((h, hi) => {
       const min = Math.floor(h.duration/60), sec = h.duration%60;
-      eh += '<div class="sg-wrong-item" style="background:#F0FAF9;border-color:#0E8F8B;"><div class="wt" style="color:#0E8F8B;">' + h.date + '</div>得分 <b>' + h.score + '</b>/100 · 答对 ' + h.right + '/60 · 用时 ' + min + '分' + sec + '秒</div>';
+      eh += '<div class="exam-hist" data-hi="' + hi + '" style="background:#F0FAF9;border:1px solid #0E8F8B;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;">' +
+            '<div class="wt" style="color:#0E8F8B;font-weight:600;">' + h.date + '</div>' +
+            '<div style="font-size:13px;margin-top:4px;">得分 <b>' + h.score + '</b>/100 · 答对 ' + h.right + '/60 · 用时 ' + min + '分' + sec + '秒</div>' +
+            '<div class="exam-hist-detail" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed #0E8F8B55;"></div>' +
+            '</div>';
     });
     $('sgExam').innerHTML = eh;
+    $('sgExam').querySelectorAll('.exam-hist').forEach(el => {
+      el.onclick = () => {
+        const detail = el.querySelector('.exam-hist-detail');
+        if (detail.style.display === 'block') { detail.style.display = 'none'; return; }
+        const hi = Number(el.dataset.hi);
+        const h = hist[hi];
+        let dh = '';
+        if (h.wrongIds && h.wrongIds.length) {
+          dh += '<div style="font-size:12.5px;color:#B33235;font-weight:600;margin-bottom:6px;">错题 ' + h.wrongIds.length + ' 道（点击题号查看）</div>';
+          h.wrongIds.forEach(qid => {
+            const q = ALL.find(x => x.qstId === qid);
+            if (!q) return;
+            const stem = (q.stem || '').replace(/<[^>]+>/g, '').slice(0, 40);
+            dh += '<div class="exam-wrong-jump" data-qid="' + qid + '" style="font-size:12.5px;padding:6px 8px;background:#FEF4F4;border-radius:6px;margin-bottom:4px;cursor:pointer;">' + esc(stem) + '…</div>';
+          });
+        } else {
+          dh += '<div style="font-size:12.5px;color:#52C41A;font-weight:600;">全对！</div>';
+        }
+        detail.innerHTML = dh;
+        detail.style.display = 'block';
+        detail.querySelectorAll('.exam-wrong-jump').forEach(j => {
+          j.onclick = (e) => {
+            e.stopPropagation();
+            const qid = Number(j.dataset.qid);
+            // 切到全部题库并跳转
+            state.wrongOnly = false;
+            state.order = buildOrder();
+            const idx = state.order.findIndex(x => x.qstId === qid);
+            if (idx >= 0) { state.idx = idx; closeStats(); renderQuestion(); }
+          };
+        });
+      };
+    });
   }
   $('statGrid').classList.add('show');
   $('statMask').classList.add('show');
@@ -953,7 +1012,7 @@ function startExam() {
     [ids[i], ids[j]] = [ids[j], ids[i]];
   }
   const picked = ids.slice(0, 60).map(id => ALL.find(q => q.qstId === id));
-  state.exam = { startAt: Date.now(), answers: {}, timer: null, endAt: Date.now() + 3600 * 1000 };
+  state.exam = { startAt: Date.now(), picks: {}, answers: {}, submitted: false, timer: null, endAt: Date.now() + 3600 * 1000 };
   state.order = picked;
   state.idx = 0;
   state.sel = {};
@@ -962,6 +1021,19 @@ function startExam() {
   const timerEl = $('examTimer');
   timerEl.style.display = 'inline';
   timerEl.classList.remove('warn');
+  const btnSubmit = $('btnSubmit');
+  btnSubmit.textContent = '交卷';
+  btnSubmit.onclick = () => {
+    let done = 0;
+    state.order.forEach(q => {
+      const p = state.exam.picks[q.qstId];
+      if (p && p.length && (p[0] || '').toString().trim()) done++;
+    });
+    const unanswered = state.order.length - done;
+    let msg = `确定交卷吗？\n\n已作答：${done}/${state.order.length} 题`;
+    if (unanswered > 0) msg += `\n未作答：${unanswered} 题（按错题算）`;
+    if (confirm(msg)) submitExam();
+  };
   function tick() {
     if (!state.exam) return;
     const left = Math.max(0, Math.round((state.exam.endAt - Date.now()) / 1000));
@@ -976,20 +1048,34 @@ function startExam() {
   rebuild();
 }
 function submitExam() {
-  if (!state.exam) return;
+  if (!state.exam || state.exam.submitted) return;
+  state.exam.submitted = true;
   const list = state.order;
   let right = 0, done = 0;
+  const wrongIds = [], rightIds = [], details = {};
   list.forEach(q => {
-    const a = state.exam.answers[q.qstId];
-    if (a === true) right++;
-    if (a !== undefined) done++;
+    let userAns;
+    const p = state.exam.picks[q.qstId] || [];
+    if (q.type === 7) {
+      userAns = [p[0] || ''];
+      if ((p[0] || '').toString().trim()) done++;
+    } else {
+      const cur = p.slice();
+      userAns = q.type === 2 ? cur.sort().join('') : (cur[0] || '');
+      if (cur.length) done++;
+    }
+    const correct = isCorrect(q, userAns);
+    details[q.qstId] = { userAns, correct };
+    if (correct) { right++; rightIds.push(q.qstId); }
+    else wrongIds.push(q.qstId);
   });
-  // 满分100，每题 100/60，四舍五入
   const score = Math.round(right / 60 * 100);
   const duration = Math.round((Date.now() - state.exam.startAt) / 1000);
   const rec = {
     date: new Date().toLocaleString('zh-CN'),
-    right, wrong: 60 - right, done, score, duration
+    right, wrong: 60 - right, done, score, duration,
+    wrongIds, rightIds,
+    qids: list.map(q => q.qstId)
   };
   let hist = [];
   try { hist = JSON.parse(localStorage.getItem(LS_EXAM)) || []; } catch (e) {}
@@ -997,12 +1083,36 @@ function submitExam() {
   if (hist.length > 50) hist = hist.slice(0, 50);
   try { localStorage.setItem(LS_EXAM, JSON.stringify(hist)); } catch (e) {}
   if (state.exam && state.exam.timer) clearInterval(state.exam.timer);
+  // 保存本次考试详情供查看
+  try {
+    const allDetails = JSON.parse(localStorage.getItem('xhmo_exam_details_v1') || '{}');
+    allDetails[rec.date] = details;
+    // 只保留最近 20 次详情
+    const keys = Object.keys(allDetails);
+    if (keys.length > 20) {
+      keys.slice(0, keys.length - 20).forEach(k => delete allDetails[k]);
+    }
+    localStorage.setItem('xhmo_exam_details_v1', JSON.stringify(allDetails));
+  } catch (e) {}
   state.exam = null;
   $('btnExam').classList.remove('on');
   $('btnExam').textContent = '模拟考试';
   $('examTimer').style.display = 'none';
   $('examTimer').classList.remove('warn');
-  alert('考试交卷！\n\n得分：' + score + ' / 100\n答对：' + right + ' / 60\n用时：' + Math.floor(duration/60) + '分' + (duration%60) + '秒');
+  // 恢复底部"确认作答"
+  const btnSubmit = $('btnSubmit');
+  btnSubmit.textContent = '确认作答';
+  btnSubmit.onclick = () => {
+    const { q, rec } = qSel();
+    if (rec) return;
+    if (q.type === 7) {
+      if (!($('fillInput').value || '').trim()) { toast('请先输入答案'); return; }
+    } else {
+      if (!(state.sel[q.qstId] || []).length) { toast('请先选择答案'); return; }
+    }
+    judgeAnswer(q);
+  };
+  alert('考试结束！\n\n得分：' + score + ' / 100\n答对：' + right + ' / 60\n答错：' + (60-right) + ' 题\n用时：' + Math.floor(duration/60) + '分' + (duration%60) + '秒\n\n可在「数据」面板查看错题详情');
   rebuild();
 }
 
@@ -1130,8 +1240,23 @@ function initControls() {
   });
   $('fillInput').onkeydown = e => {
     if (e.key === 'Enter') {
-      $('btnSubmit').click();
-      $('fillInput').blur(); // 提交后移出焦点，恢复方向键/A/D 切题
+      if (state.exam) { e.preventDefault(); $('fillInput').blur(); return; }
+      const { q } = qSel();
+      if (!(state.exam && state.exam.submitted)) {
+        if (($('fillInput').value || '').trim()) judgeAnswer(q);
+      }
+      $('fillInput').blur();
+    }
+  };
+  // 考试时填空题失焦存值
+  $('fillInput').onblur = () => {
+    if (state.exam && !state.exam.submitted) {
+      const { q } = qSel();
+      const v = ($('fillInput').value || '').trim();
+      state.exam.picks[q.qstId] = v ? [v] : [];
+      state.sel[q.qstId] = state.exam.picks[q.qstId];
+      renderStats();
+      renderCard();
     }
   };
   document.addEventListener('keydown', e => {
@@ -1155,11 +1280,11 @@ function initControls() {
       const i = Number(k) - 1;
       if (opts[i]) { e.preventDefault(); opts[i].click(); }
     } else if (e.code === 'Space' || e.code === 'Enter') {
-      // 空格或回车：确认作答
+      // 考试模式下禁用空格/回车
+      if (state.exam) { e.preventDefault(); return; }
       e.preventDefault();
       $('btnSubmit').click();
-    }
-  });
+    }  });
 }
 
 function rebuild() {
