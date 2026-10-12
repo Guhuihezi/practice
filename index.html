@@ -257,8 +257,8 @@
   </div>
 
   <div class="bar">
-    <span class="g">试卷</span>
-    <select id="selPaper"></select>
+    <span class="g" style="display:none;">试卷</span>
+    <select id="selPaper" style="display:none;"></select>
     <span class="g">题型</span>
     <select id="selType"></select>
     <button class="btn ghost" id="btnShuffle" title="打乱题目顺序">随机序</button>
@@ -363,6 +363,7 @@ let state = {
   shuffle: false,
   wrongOnly: false,
   wrongList: [],   // 错题重练：本轮错题 ID 列表
+  wrongBook: [],   // 持久错题本：清空进度也保留
   favOnly: false,  // 只看收藏
   favs: {},        // qstId -> true 收藏集合
   study: false,      // 背题模式：直接显示答案与解析
@@ -392,7 +393,7 @@ function inScope(q, scope) {
 function buildOrder() {
   const scope = { paper: state.paper, type: state.type };
   let list = ALL.filter(q => inScope(q, scope));
-  if (state.wrongOnly) list = list.filter(q => state.wrongList.includes(q.qstId));
+  if (state.wrongOnly) list = list.filter(q => state.wrongBook.includes(q.qstId));
   if (state.favOnly) list = list.filter(q => state.favs[q.qstId]);
   // 单选/多选选项乱序（每个题只乱序一次，判断/填空保持原顺序）
   list.forEach(shuffleOptionsOnce);
@@ -439,6 +440,13 @@ function saveRec() {
 const LS_POS = 'xhmo_exam_pos_v1';
 const LS_FAV = 'xhmo_exam_favs_v1';
 const LS_VIEW = 'xhmo_exam_views_v1';
+const LS_WB = 'xhmo_wrongbook_v1';
+function loadWrongBook() {
+  try { state.wrongBook = JSON.parse(localStorage.getItem(LS_WB)) || []; } catch (e) { state.wrongBook = []; }
+}
+function saveWrongBook() {
+  try { localStorage.setItem(LS_WB, JSON.stringify(state.wrongBook)); } catch (e) {}
+}
 let fillFocusTimer = null; // 填空题自动聚焦计时器
 const MODE_NAMES = { normal:'顺序', shuffle:'乱序', wrong:'错题', fav:'收藏', study:'背题' };
 function loadFavs() {
@@ -810,6 +818,13 @@ function judgeAnswer(q) {
   }
   state.records[q.qstId] = { answer: userAns, correct };
   saveRec();
+  // 持久错题本
+  if (correct) {
+    state.wrongBook = state.wrongBook.filter(id => id !== q.qstId);
+  } else if (!state.wrongBook.includes(q.qstId)) {
+    state.wrongBook.push(q.qstId);
+  }
+  saveWrongBook();
   if (state.wrongOnly && correct) {
     // 错题重练：答对即移出错题列表
     state.wrongList = state.wrongList.filter(id => id !== q.qstId);
@@ -945,8 +960,13 @@ function openStats() {
     $('sgWrong').querySelectorAll('.sg-wrong-item').forEach(el => {
       el.onclick = () => {
         const qid = Number(el.dataset.qid);
+        // 切回全部题库再跳转
+        state.wrongOnly = false;
+        $('btnWrongOnly').classList.remove('on');
+        state.order = ALL.slice();
+        if (state.shuffle) state.order.sort(() => 0.5 - Math.random());
         const idx = state.order.findIndex(x => x.qstId === qid);
-        if (idx >= 0) { state.idx = idx; closeStats(); renderQuestion(); }
+        if (idx >= 0) { state.idx = idx; closeStats(); rebuild(); }
       };
     });
   }
@@ -1165,17 +1185,14 @@ function initControls() {
     state.wrongOnly = !state.wrongOnly;
     $('btnWrongOnly').classList.toggle('on', state.wrongOnly);
     if (state.wrongOnly) {
-      // 错题重练：收集错题 ID 并解锁（清掉旧作答记录，重新作答）
-      state.wrongList = [];
-      Object.keys(state.records).forEach(id => {
-        if (state.records[id].correct === false) {
-          state.wrongList.push(Number(id));
-          delete state.records[id];
-        }
-      });
-      if (state.wrongList.length) { saveRec(); toast('已解锁 ' + state.wrongList.length + ' 道错题，开始重练'); }
-    } else {
-      state.wrongList = [];
+      // 错题重练：清掉错题本里题的旧作答，重新答
+      state.wrongBook.forEach(id => delete state.records[id]);
+      saveRec();
+      if (state.wrongBook.length) {
+        toast('错题本 ' + state.wrongBook.length + ' 道，重新作答（答对自动移出）');
+      } else {
+        toast('错题本是空的');
+      }
     }
     state.idx = 0;
     rebuild();
@@ -1201,17 +1218,12 @@ function initControls() {
     renderQuestion();
   };
   $('btnReset').onclick = () => {
-    if (confirm('确定清空全部作答记录？\n\n（错题已加入错题本，可在错题模式重新刷）')) {
-      // 收集错题 ID，加入错题本；清空所有作答
-      state.wrongList = [];
-      Object.keys(state.records).forEach(id => {
-        if (!state.records[id].correct) state.wrongList.push(Number(id));
-      });
+    if (confirm('确定清空全部作答进度？\n\n（错题本会保留，可在错题模式继续刷）')) {
       state.records = {};
       state.wrongOnly = false;
       $('btnWrongOnly').classList.remove('on');
       saveRec();
-      toast('已清空，' + state.wrongList.length + ' 道错题已加入错题本');
+      toast('已清空进度，错题本 ' + state.wrongBook.length + ' 道保留');
       rebuild();
     }
   };
@@ -1341,6 +1353,7 @@ function toast(msg) {
 $('hdTotal').textContent = ALL.length;
 loadRec();
 loadFavs();
+loadWrongBook();
 if (!loadViews()) {
   // 旧版本无答题区数据：用上次位置构造一个默认答题区
   loadPos();
