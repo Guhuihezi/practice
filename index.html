@@ -244,6 +244,8 @@
   body.dark .favbtn { color:#555657; }
   body.dark .favbtn.on { color:#F5A623; }
   .theme-toggle { width:38px; height:38px; flex:0 0 38px; align-items:center; justify-content:center; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3); border-radius:8px; font-size:18px; color:#fff; cursor:pointer; }
+  .top-btn { height:38px; min-width:46px; padding:0 12px; align-items:center; justify-content:center; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3); border-radius:8px; font-size:13px; font-weight:600; color:#fff; cursor:pointer; }
+  .top-btn:hover { background:rgba(255,255,255,.3); }
 
   .footer { text-align:center; font-size:11.5px; color:#9CA3AF; margin-top:22px; line-height:1.8; }
 
@@ -297,6 +299,7 @@
       <button class="hamburger" id="hamburgerBtn" title="答题区">☰</button>
       <h1>HarmonyOS 中级2.0 · 刷题练习</h1>
       <span class="crown-badge" id="crownBadge" title="考试凭证已解锁" style="display:none;"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><defs><linearGradient id="qcgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE98A"/><stop offset="1" stop-color="#E0A92E"/></linearGradient></defs><path d="M3 17.5 L4.6 7.8 L9.2 12.6 L12 4.8 L14.8 12.6 L19.4 7.8 L21 17.5 Z" fill="url(#qcgB)" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.6 17.5 L3.6 19.2 L20.4 19.2 L20.4 17.5 Z" fill="url(#qcgB)" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/><circle cx="4.6" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/><circle cx="12" cy="4.8" r="1.7" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/><circle cx="19.4" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/></svg></span>
+      <button class="top-btn" id="btnStats" title="刷题数据面板">数据</button>
       <button class="theme-toggle" id="themeBtn" title="切换暗色/亮色">🌙</button>
     </div>
     <div class="sub">数据来源：讯方模考小程序 · 共 <b id="hdTotal">0</b> 题（3 套卷）</div>
@@ -318,7 +321,6 @@
     <button class="btn ghost" id="btnWrongOnly" title="错题重练：只做错题，答对自动移出">错题模式</button>
     <button class="btn ghost" id="btnFavOnly" title="只看收藏：把相近的题放一起对比做">只看收藏</button>
     <button class="btn ghost" id="btnStudy" title="背题模式：直接显示答案和解析">背题模式</button>
-    <button class="btn ghost" id="btnStats" title="刷题数据面板">数据</button>
     <button class="btn ghost" id="btnExam" title="模拟考试：随机抽60题，满分100分">模拟考试</button>
     <div class="spacer"></div>
     <button class="btn danger ghost" id="btnReset">清空进度</button>
