@@ -250,9 +250,9 @@
     <div class="stats">
       <div class="stat"><div class="n" id="stTotal">0</div><div class="l">当前范围</div></div>
       <div class="stat"><div class="n" id="stDone">0</div><div class="l">已作答</div></div>
-      <div class="stat"><div class="n" id="stRight">0</div><div class="l">答对</div></div>
-      <div class="stat"><div class="n" id="stWrong">0</div><div class="l">答错</div></div>
-      <div class="stat"><div class="n" id="stRate">--</div><div class="l">正确率</div></div>
+      <div class="stat" id="stRightBox"><div class="n" id="stRight">0</div><div class="l">答对</div></div>
+      <div class="stat" id="stWrongBox"><div class="n" id="stWrong">0</div><div class="l">答错</div></div>
+      <div class="stat" id="stRateBox"><div class="n" id="stRate">--</div><div class="l">正确率</div></div>
     </div>
   </div>
 
@@ -631,9 +631,9 @@ function renderStats() {
     });
     $('stTotal').textContent = total;
     $('stDone').textContent = done;
-    $('stRight').textContent = '--';
-    $('stWrong').textContent = '--';
-    $('stRate').textContent = total ? Math.round(done/total*100) + '%' : '--';
+    $('stRightBox').style.display = 'none';
+    $('stWrongBox').style.display = 'none';
+    $('stRateBox').style.display = 'none'; // 考试模式不显示正确率
     $('wrongTipN').textContent = 0;
     $('wrongTip').classList.remove('show');
     return;
@@ -646,6 +646,9 @@ function renderStats() {
   });
   $('stTotal').textContent = total;
   $('stDone').textContent = done;
+  $('stRightBox').style.display = '';
+  $('stWrongBox').style.display = '';
+  $('stRateBox').style.display = '';
   $('stRight').textContent = right;
   $('stWrong').textContent = wrong;
   $('stRate').textContent = done ? Math.round(right / done * 100) + '%' : '--';
