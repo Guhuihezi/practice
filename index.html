@@ -152,6 +152,49 @@
   .tip { margin-top:14px; background:#FFF9E8; border:1px solid #F0E0A8; color:#7A5F0E; border-radius:11px; padding:11px 14px; font-size:12.5px; line-height:1.7; display:none; }
   .tip.show { display:block; }
 
+  /* ---------- 约考资格 ---------- */
+  .crown-badge { display:inline-flex; align-items:center; margin:0 10px 0 2px; cursor:default; user-select:none; -webkit-user-select:none; filter:drop-shadow(0 1px 4px rgba(224,169,46,.75)); vertical-align:middle; }
+  .crown-badge svg { display:block; }
+  .qualify-fab { position:fixed; right:16px; bottom:124px; z-index:80; display:flex; align-items:center; gap:8px; background:#FFFDF5; border:1.5px solid #E4C46A; color:#8A6D1D; border-radius:99px; padding:9px 16px; font-size:13px; font-weight:600; box-shadow:0 4px 14px rgba(0,0,0,.14); cursor:pointer; transition:all .18s; user-select:none; -webkit-user-select:none; }
+  .qualify-fab:hover { background:#FFF7DC; transform:translateY(-1px); }
+  .qualify-fab .ic { display:inline-flex; align-items:center; }
+  .qualify-fab .ic svg { display:block; }
+  .qualify-fab.unlocked { background:linear-gradient(135deg,#FFF3C4,#FFE49A); border-color:#D4A72C; color:#7A5A08; }
+  .qualifygrid { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:min(94vw,560px); max-height:84vh; overflow-y:auto; background:#fff; border:1px solid #E4E3DD; border-radius:16px; padding:20px; display:none; z-index:96; box-shadow:0 10px 36px rgba(0,0,0,.22); user-select:none; -webkit-user-select:none; }
+  .qualifygrid.show { display:block; }
+  .qg-title { font-size:16px; font-weight:700; color:#1A1B1C; display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+  .qg-sub { font-size:12px; color:#9CA3AF; margin-bottom:14px; }
+  .qg-rule { background:#FFFBF0; border:1px solid #F0E0A8; border-radius:11px; padding:13px 15px; font-size:13px; line-height:2; color:#6B5B1E; margin-bottom:14px; }
+  .qg-rule b { color:#B8860B; }
+  .qg-sec { font-size:13px; font-weight:700; color:#374151; margin:14px 0 8px; }
+  .qg-prog { display:flex; gap:10px; margin-bottom:12px; }
+  .qg-pcard { flex:1; background:#F8F7F2; border-radius:10px; padding:10px 8px; text-align:center; }
+  .qg-pcard .n { font-size:19px; font-weight:700; color:#1A1B1C; }
+  .qg-pcard .l { font-size:11px; color:#6B7280; margin-top:2px; }
+  .qg-pcard.ok .n { color:#0E8F8B; }
+  .qg-pcard.no .n { color:#B33235; }
+  .qg-list { max-height:180px; overflow-y:auto; }
+  .qg-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:#F8F7F2; margin-bottom:6px; font-size:12.5px; color:#4B5563; }
+  .qg-item .d { flex:1; }
+  .qg-item .r { font-weight:700; }
+  .qg-item .r.pass { color:#0E8F8B; }
+  .qg-item .r.fail { color:#B33235; }
+  .qg-empty { font-size:12.5px; color:#9CA3AF; text-align:center; padding:14px 0; }
+  .qg-actions { display:flex; gap:10px; margin-top:16px; }
+  .qg-actions .btn { flex:1; padding:11px 12px; font-size:14px; border-radius:10px; }
+  .qg-actions .btn.primary { background:#0E8F8B; border-color:#0E8F8B; color:#fff; font-weight:600; }
+  .qg-actions .btn.primary:hover { background:#0C7F7C; }
+  .qg-cert { text-align:center; padding:20px 10px; background:linear-gradient(160deg,#FFFDF2,#FFF6D6); border:1.5px dashed #D4A72C; border-radius:14px; margin-top:4px; }
+  .qg-cert .big { line-height:1; margin-bottom:8px; }
+  .qg-cert .big svg { display:block; margin:0 auto; }
+  .qg-cert .name { font-size:18px; font-weight:800; color:#8A6D1D; letter-spacing:6px; margin:6px 0 2px; }
+  .qg-cert .meta { font-size:12.5px; color:#8A6D1D; line-height:2; }
+  .qg-cert .meta b { font-size:14px; }
+  .qg-crown { display:inline-flex; align-items:center; margin-left:4px; }
+  .qg-crown svg { display:block; }
+  .qg-crown.locked { filter:grayscale(1); opacity:.5; }
+  .qg-done-tip { font-size:12px; color:#B8860B; text-align:center; margin-top:8px; }
+
   /* 暗色模式 */
   body.dark { background:#151617; color:#E5E4E0; }
   body.dark .viewbar, body.dark .bar, body.dark .qcard, body.dark .prog, body.dark .cardgrid, body.dark .statgrid { background:#232425; border-color:#3A3B3C; color:#E5E4E0; }
@@ -176,6 +219,15 @@
   body.dark .progbar, body.dark .sg-row .bar { background:#333435; }
   body.dark .dock { background:#232425; border-top-color:#3A3B3C; }
   body.dark .sg-card { background:#2A2B2C; }
+  body.dark .qualifygrid { background:#232425; border-color:#3A3B3C; }
+  body.dark .qg-title, body.dark .qg-sec { color:#E5E4E0; }
+  body.dark .qg-rule { background:#2A2515; border-color:#4A4020; color:#D9C98A; }
+  body.dark .qg-pcard { background:#2A2B2C; }
+  body.dark .qg-pcard .n { color:#E5E4E0; }
+  body.dark .qg-item { background:#2A2B2C; color:#C5C6C7; }
+  body.dark .qg-cert { background:linear-gradient(160deg,#2A2515,#332C18); border-color:#8A6D1D; }
+  body.dark .qualify-fab { background:#2A2515; border-color:#8A6D1D; color:#E4C46A; }
+  body.dark .qualify-fab.unlocked { background:linear-gradient(135deg,#3A3218,#4A3E1E); border-color:#D4A72C; color:#F0D98A; }
   body.dark .sg-card .n { color:#E5E4E0; }
   body.dark .sg-wrong-item { background:#3A2323; border-color:#7A3030; color:#E5E4E0; }
   body.dark .sg-wrong-item:hover { background:#4A2A2A; }
@@ -244,6 +296,7 @@
     <div class="header-top">
       <button class="hamburger" id="hamburgerBtn" title="答题区">☰</button>
       <h1>HarmonyOS 中级2.0 · 刷题练习</h1>
+      <span class="crown-badge" id="crownBadge" title="考试凭证已解锁" style="display:none;"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><defs><linearGradient id="qcgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE98A"/><stop offset="1" stop-color="#E0A92E"/></linearGradient></defs><path d="M3 17.5 L4.6 7.8 L9.2 12.6 L12 4.8 L14.8 12.6 L19.4 7.8 L21 17.5 Z" fill="url(#qcgB)" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.6 17.5 L3.6 19.2 L20.4 19.2 L20.4 17.5 Z" fill="url(#qcgB)" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/><circle cx="4.6" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/><circle cx="12" cy="4.8" r="1.7" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/><circle cx="19.4" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/></svg></span>
       <button class="theme-toggle" id="themeBtn" title="切换暗色/亮色">🌙</button>
     </div>
     <div class="sub">数据来源：讯方模考小程序 · 共 <b id="hdTotal">0</b> 题（3 套卷）</div>
@@ -321,6 +374,13 @@
 
   <div class="tip" id="wrongTip">当前为「错题重练」模式：共 <b id="wrongTipN">0</b> 道错题，答对会自动移出。</div>
 
+  <button class="qualify-fab" id="qualifyBtn" title="考试资格">
+    <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><defs><linearGradient id="qcgF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE98A"/><stop offset="1" stop-color="#E0A92E"/></linearGradient></defs><path d="M3 17.5 L4.6 7.8 L9.2 12.6 L12 4.8 L14.8 12.6 L19.4 7.8 L21 17.5 Z" fill="url(#qcgF)" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.6 17.5 L3.6 19.2 L20.4 19.2 L20.4 17.5 Z" fill="url(#qcgF)" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/><circle cx="4.6" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/><circle cx="12" cy="4.8" r="1.7" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/><circle cx="19.4" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/></svg></span><span id="qualifyBtnText">已经全部掌握？点我获取约考凭证</span>
+  </button>
+
+  <div class="cardmask" id="qualifyMask"></div>
+  <div class="qualifygrid" id="qualifyGrid"></div>
+
   <div class="cardmask" id="statMask"></div>
   <div class="statgrid" id="statGrid">
     <div class="cg-title">刷题数据面板</div>
@@ -378,6 +438,9 @@ let state = {
 };
 const LS_KEY = 'xhmo_exam_records_v1';
 const LS_EXAM = 'xhmo_exam_history_v1';
+const LS_QUALIFY = 'xhmo_qualify_v1';
+// 约考资格数据：{ history:[{date,time,score,rate,pass}], unlockedAt, certNo }
+let qualify = { history: [], unlockedAt: null, certNo: null };
 
 // ---------- 数据准备 ----------
 const ALL = [];
@@ -1031,21 +1094,30 @@ function closeStats() {
   $('statMask').classList.remove('show');
 }
 
-// ---------- 模拟考试 ----------
-function startExam() {
-  if (!confirm('开始模拟考试？将从全部题库随机抽取 60 题，满分 100 分。')) return;
+// ---------- 模拟考试 / 约考考试 ----------
+function startExam(kind) {
+  kind = kind || 'mock';
+  if (state.exam) { toast('考试进行中，请先交卷'); return; }
+  if (kind === 'qualify') {
+    if (qualifyUnlocked()) { toast('已获得考试凭证，无需再考'); return; }
+    if (!confirm('开始资格挑战考试？\n\n将从全部题库随机抽取 60 题，满分 100 分。\n本次成绩会计入资格判定，需正确率 ≥ 95%。')) return;
+  } else {
+    if (!confirm('开始模拟考试？将从全部题库随机抽取 60 题，满分 100 分。')) return;
+  }
   const ids = ALL.map(q => q.qstId);
   for (let i = ids.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [ids[i], ids[j]] = [ids[j], ids[i]];
   }
   const picked = ids.slice(0, 60).map(id => ALL.find(q => q.qstId === id));
-  state.exam = { startAt: Date.now(), picks: {}, answers: {}, submitted: false, timer: null, endAt: Date.now() + 3600 * 1000 };
+  state.exam = { kind, startAt: Date.now(), picks: {}, answers: {}, submitted: false, timer: null, endAt: Date.now() + 3600 * 1000 };
   state.order = picked;
   state.idx = 0;
   state.sel = {};
-  $('btnExam').classList.add('on');
-  $('btnExam').textContent = '交卷';
+  if (kind === 'mock') {
+    $('btnExam').classList.add('on');
+    $('btnExam').textContent = '交卷';
+  }
   const timerEl = $('examTimer');
   timerEl.style.display = 'inline';
   timerEl.classList.remove('warn');
@@ -1072,7 +1144,7 @@ function startExam() {
   }
   tick();
   state.exam.timer = setInterval(tick, 1000);
-  toast('模拟考试开始，共 60 题，限时 1 小时');
+  toast(kind === 'qualify' ? '考试开始，共 60 题，限时 1 小时' : '模拟考试开始，共 60 题，限时 1 小时');
   rebuild();
 }
 function submitExam() {
@@ -1105,23 +1177,41 @@ function submitExam() {
     wrongIds, rightIds,
     qids: list.map(q => q.qstId)
   };
-  let hist = [];
-  try { hist = JSON.parse(localStorage.getItem(LS_EXAM)) || []; } catch (e) {}
-  hist.unshift(rec);
-  if (hist.length > 50) hist = hist.slice(0, 50);
-  try { localStorage.setItem(LS_EXAM, JSON.stringify(hist)); } catch (e) {}
+  const isQualify = state.exam.kind === 'qualify';
+  let qualifyMsg = '';
+  if (isQualify) {
+    // 约考考试：单独归档，不混入模拟考试历史
+    const rate = Math.round(right / 60 * 100);
+    const pass = rate >= 95;
+    const now = new Date();
+    const hm = (now.getHours() < 10 ? '0' : '') + now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+    qualify.history.push({ date: todayStr(), time: hm, score, rate, pass });
+    saveQualify();
+    updateQualifyUI();
+    let unlockedNow = false;
+    if (!qualifyUnlocked() && qualifyStreak() >= 3) { unlockQualify(); unlockedNow = true; }
+    qualifyMsg = '考试结束！\n\n得分：' + score + ' / 100\n答对：' + right + ' / 60\n正确率：' + rate + '%\n' + (pass ? '✓ 本次达标' : '✗ 本次未达标') +
+      '\n\n今日已达标：' + qualifyTodayPassCount() + ' / 3 次\n连续达标：' + qualifyStreak() + ' / 3 天';
+    if (unlockedNow) qualifyMsg += '\n\n🎉 恭喜！你已解锁「考试凭证」！';
+  } else {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_EXAM)) || []; } catch (e) {}
+    hist.unshift(rec);
+    if (hist.length > 50) hist = hist.slice(0, 50);
+    try { localStorage.setItem(LS_EXAM, JSON.stringify(hist)); } catch (e) {}
+    // 保存本次考试详情供查看
+    try {
+      const allDetails = JSON.parse(localStorage.getItem('xhmo_exam_details_v1') || '{}');
+      allDetails[rec.date] = details;
+      // 只保留最近 20 次详情
+      const keys = Object.keys(allDetails);
+      if (keys.length > 20) {
+        keys.slice(0, keys.length - 20).forEach(k => delete allDetails[k]);
+      }
+      localStorage.setItem('xhmo_exam_details_v1', JSON.stringify(allDetails));
+    } catch (e) {}
+  }
   if (state.exam && state.exam.timer) clearInterval(state.exam.timer);
-  // 保存本次考试详情供查看
-  try {
-    const allDetails = JSON.parse(localStorage.getItem('xhmo_exam_details_v1') || '{}');
-    allDetails[rec.date] = details;
-    // 只保留最近 20 次详情
-    const keys = Object.keys(allDetails);
-    if (keys.length > 20) {
-      keys.slice(0, keys.length - 20).forEach(k => delete allDetails[k]);
-    }
-    localStorage.setItem('xhmo_exam_details_v1', JSON.stringify(allDetails));
-  } catch (e) {}
   state.exam = null;
   $('btnExam').classList.remove('on');
   $('btnExam').textContent = '模拟考试';
@@ -1140,8 +1230,142 @@ function submitExam() {
     }
     judgeAnswer(q);
   };
-  alert('考试结束！\n\n得分：' + score + ' / 100\n答对：' + right + ' / 60\n答错：' + (60-right) + ' 题\n用时：' + Math.floor(duration/60) + '分' + (duration%60) + '秒\n\n可在「数据」面板查看错题详情');
+  if (isQualify) {
+    alert(qualifyMsg);
+    openQualify(); // 交卷后自动打开约考面板看进度
+  } else {
+    alert('考试结束！\n\n得分：' + score + ' / 100\n答对：' + right + ' / 60\n答错：' + (60-right) + ' 题\n用时：' + Math.floor(duration/60) + '分' + (duration%60) + '秒\n\n可在「数据」面板查看错题详情');
+  }
   rebuild();
+}
+
+// ---------- 约考资格 ----------
+function crownSvg(size, suffix) {
+  return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
+    '<defs><linearGradient id="qcg' + suffix + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#FFE98A"/><stop offset="1" stop-color="#E0A92E"/></linearGradient></defs>' +
+    '<path d="M3 17.5 L4.6 7.8 L9.2 12.6 L12 4.8 L14.8 12.6 L19.4 7.8 L21 17.5 Z" fill="url(#qcg' + suffix + ')" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '<path d="M3.6 17.5 L3.6 19.2 L20.4 19.2 L20.4 17.5 Z" fill="url(#qcg' + suffix + ')" stroke="#C89B2C" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '<circle cx="4.6" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/>' +
+    '<circle cx="12" cy="4.8" r="1.7" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/>' +
+    '<circle cx="19.4" cy="7.8" r="1.5" fill="#C0392B" stroke="#8E2A1D" stroke-width="0.6"/></svg>';
+}
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() < 9 ? '0' : '') + (d.getMonth() + 1) + '-' + (d.getDate() < 10 ? '0' : '') + d.getDate();
+}
+function prevDateStr(dateStr) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + (d.getMonth() < 9 ? '0' : '') + (d.getMonth() + 1) + '-' + (d.getDate() < 10 ? '0' : '') + d.getDate();
+}
+function loadQualify() {
+  try {
+    const q = JSON.parse(localStorage.getItem(LS_QUALIFY));
+    if (q) qualify = q;
+  } catch (e) {}
+  if (!qualify.history) qualify.history = [];
+}
+function saveQualify() {
+  try { localStorage.setItem(LS_QUALIFY, JSON.stringify(qualify)); } catch (e) {}
+}
+function qualifyUnlocked() { return !!qualify.unlockedAt; }
+function qualifyTodayPassCount() {
+  const t = todayStr();
+  return qualify.history.filter(h => h.date === t && h.pass).length;
+}
+function qualifyStreak() {
+  // 从今天往前数：每天 pass ≥3 次才算达标，缺一天即断
+  let streak = 0;
+  let d = todayStr();
+  while (true) {
+    const cnt = qualify.history.filter(h => h.date === d && h.pass).length;
+    if (cnt >= 3) { streak++; d = prevDateStr(d); }
+    else break;
+  }
+  return streak;
+}
+function unlockQualify() {
+  qualify.unlockedAt = new Date().toLocaleString('zh-CN');
+  const d = todayStr().replace(/-/g, '');
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  qualify.certNo = 'XK-' + d + '-' + rand;
+  saveQualify();
+  updateQualifyUI();
+  renderQualify();
+}
+function checkQualifyUnlock() {
+  // 刷新页面时自动复查：达标条件满足则补发凭证
+  if (!qualifyUnlocked() && qualifyStreak() >= 3) unlockQualify();
+}
+function updateQualifyUI() {
+  const unlocked = qualifyUnlocked();
+  const badge = $('crownBadge');
+  badge.style.display = unlocked ? 'inline' : 'none';
+  const fab = $('qualifyBtn');
+  fab.classList.toggle('unlocked', unlocked);
+  $('qualifyBtnText').textContent = unlocked ? '已获得考试凭证' : '已经全部掌握？点我获取约考凭证';
+}
+function renderQualify() {
+  const grid = $('qualifyGrid');
+  const unlocked = qualifyUnlocked();
+  let html = '<div class="qg-title"><span class="qg-crown' + (unlocked ? '' : ' locked') + '">' + crownSvg(22, 'G') + '</span>考试资格</div>';
+  html += '<div class="qg-sub">通往真正考试的资格挑战</div>';
+  if (unlocked) {
+    // 凭证
+    html += '<div class="qg-cert"><div class="big">' + crownSvg(60, 'C') + '</div><div class="name">考试凭证</div>' +
+      '<div class="meta">凭证编号：<b>' + esc(qualify.certNo || '—') + '</b></div>' +
+      '<div class="meta">获得时间：' + esc(qualify.unlockedAt || '') + '</div>' +
+      '<div class="meta">达标条件：连续 3 天 × 每天 3 次 × 正确率 ≥95% 全部达成</div></div>';
+  } else {
+    // 规则
+    html += '<div class="qg-rule">想要参加真正的考试，需要先证明实力：<br>' +
+      '· 连续 <b>3 天</b>，每天完成 <b>3 次</b>考试<br>' +
+      '· 每次正确率 <b>≥ 95%</b><br>' +
+      '· 全部达标后，解锁专属 <b>考试凭证</b></div>';
+    // 进度
+    const streak = qualifyStreak();
+    const today = qualifyTodayPassCount();
+    html += '<div class="qg-sec">当前进度</div>';
+    html += '<div class="qg-prog">' +
+      '<div class="qg-pcard' + (today >= 3 ? ' ok' : '') + '"><div class="n">' + today + ' / 3</div><div class="l">今日已达标</div></div>' +
+      '<div class="qg-pcard' + (streak >= 3 ? ' ok' : '') + '"><div class="n">' + streak + ' / 3</div><div class="l">连续达标天数</div></div>' +
+      '</div>';
+    // 历史成绩
+    html += '<div class="qg-sec">最近考试成绩</div>';
+    const recent = qualify.history.slice(-12).reverse();
+    if (!recent.length) {
+      html += '<div class="qg-empty">还没有考试记录，点击下方按钮开始第一次考试</div>';
+    } else {
+      html += '<div class="qg-list">';
+      recent.forEach(h => {
+        html += '<div class="qg-item"><span class="d">' + esc(h.date) + ' ' + esc(h.time) + '</span>' +
+          '<span>得分 ' + h.score + '</span>' +
+          '<span>正确率 ' + h.rate + '%</span>' +
+          '<span class="r ' + (h.pass ? 'pass' : 'fail') + '">' + (h.pass ? '✓ 达标' : '✗ 未达标') + '</span></div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="qg-actions">' +
+      '<button class="btn primary" id="qgStartBtn">开始考试</button>' +
+      '<button class="btn" id="qgCloseBtn">关闭</button></div>';
+    if (today >= 3) html += '<div class="qg-done-tip">今日 3 次已达标，明天继续即可保持连续记录</div>';
+  }
+  grid.innerHTML = html;
+  if (!unlocked) {
+    const startBtn = $('qgStartBtn');
+    startBtn.onclick = () => { closeQualify(); startExam('qualify'); };
+    $('qgCloseBtn').onclick = closeQualify;
+  }
+}
+function openQualify() {
+  renderQualify();
+  $('qualifyGrid').classList.add('show');
+  $('qualifyMask').classList.add('show');
+}
+function closeQualify() {
+  $('qualifyGrid').classList.remove('show');
+  $('qualifyMask').classList.remove('show');
 }
 
 // ---------- 控件 ----------
@@ -1253,8 +1477,14 @@ function initControls() {
   $('statMask').onclick = closeStats;
   $('btnExam').onclick = () => {
     if (state.exam) submitExam();
-    else startExam();
+    else startExam('mock');
   };
+  // 约考资格入口
+  $('qualifyBtn').onclick = () => {
+    if (state.exam) { toast('考试进行中，请先交卷'); return; }
+    openQualify();
+  };
+  $('qualifyMask').onclick = closeQualify;
   // 手机端：汉堡按钮开关答题区
   function toggleVB(open) {
     const vb = $('viewBar'), mask = $('vbMask');
@@ -1357,6 +1587,9 @@ $('hdTotal').textContent = ALL.length;
 loadRec();
 loadFavs();
 loadWrongBook();
+loadQualify();
+updateQualifyUI();
+checkQualifyUnlock();
 if (!loadViews()) {
   // 旧版本无答题区数据：用上次位置构造一个默认答题区
   loadPos();
