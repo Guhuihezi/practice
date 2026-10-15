@@ -1277,9 +1277,12 @@ function qualifyTodayPassCount() {
   return qualify.history.filter(h => h.date === t && h.pass).length;
 }
 function qualifyStreak() {
-  // 从今天往前数：每天 pass ≥3 次才算达标，缺一天即断
+  // 从最近有达标的自然日往前数连续达标天数：
+  // 今天已达标满 3 次则从今天起算，否则从昨天起算（昨天的成果不丢）
   let streak = 0;
   let d = todayStr();
+  const todayCnt = qualify.history.filter(h => h.date === d && h.pass).length;
+  if (todayCnt < 3) d = prevDateStr(d);
   while (true) {
     const cnt = qualify.history.filter(h => h.date === d && h.pass).length;
     if (cnt >= 3) { streak++; d = prevDateStr(d); }
