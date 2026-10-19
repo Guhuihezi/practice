@@ -57,11 +57,16 @@
   .favbtn:hover { transform:scale(1.15); }
   .favbtn.on { color:#F5A623; }
   .qstem { margin-top:14px; font-size:15.5px; line-height:1.8; overflow-wrap:break-word; word-break:break-word; }
-  .qstem img { max-width:100%; border-radius:8px; margin-top:6px; display:block; }
+  .qstem img { max-width:100%; height:auto; border-radius:8px; margin-top:6px; display:block; }
   .qstem p { margin:4px 0; }
-  .opt .val img { max-width:100%; border-radius:6px; margin-top:4px; }
+  .opt .val img { max-width:100%; height:auto; border-radius:6px; margin-top:4px; }
   .opt .val { overflow-wrap:break-word; word-break:break-word; }
   .result { overflow-wrap:break-word; word-break:break-word; }
+  .result img, .result .ana img { max-width:100%; height:auto; border-radius:8px; margin-top:6px; display:block; }
+  .qstem img, .result img, .opt .val img { cursor:zoom-in; }
+  .img-preview { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:999; display:none; align-items:center; justify-content:center; padding:16px; cursor:zoom-out; }
+  .img-preview.show { display:flex; }
+  .img-preview img { max-width:100%; max-height:100%; border-radius:8px; box-shadow:0 4px 24px rgba(0,0,0,.5); }
 
   .opts { margin-top:16px; display:flex; flex-direction:column; gap:10px; }
   .opt { display:flex; align-items:flex-start; gap:10px; border:1.5px solid #E4E3DD; border-radius:11px; padding:11px 14px; cursor:pointer; transition:all .12s; }
@@ -270,6 +275,10 @@
     .vb-tab { font-size:11.5px; padding:9px 2px; }
     .vb-title { font-size:10px; }
     .hamburger { display:flex; }
+    /* 手机端：悬浮按钮收成小圆形图标，不挡内容 */
+    .qualify-fab { right:10px; bottom:104px; width:46px; height:46px; min-width:0; padding:0; border-radius:50%; justify-content:center; }
+    .qualify-fab .ic svg { width:24px; height:24px; }
+    #qualifyBtnText { display:none; }
   }
   @media (max-width:480px){
     body { padding:12px 8px 50px; }
@@ -819,6 +828,7 @@ function renderStudyResult(q) {
   }
   box.className = 'result show ok';
   box.innerHTML = html;
+  syncBodyPad();
 }
 
 function pickOption(q, order, el) {
@@ -926,7 +936,7 @@ function isCorrect(q, userAns) {
 
 function renderResult(q, rec) {
   const box = $('qResult');
-  if (!rec) { box.className = 'result'; box.innerHTML = ''; return; }
+  if (!rec) { box.className = 'result'; box.innerHTML = ''; syncBodyPad(); return; }
   let html = '';
   if (rec.correct) {
     html += '<div class="rt">✓ 回答正确</div>';
@@ -947,6 +957,24 @@ function renderResult(q, rec) {
   }
   box.className = 'result show ' + (rec.correct ? 'ok' : 'no');
   box.innerHTML = html;
+  syncBodyPad();
+}
+
+// 解析展开时动态撑开底部间距，避免 dock 挡住选项
+function syncBodyPad() {
+  padDock();
+  // 图片加载完成后 dock 高度会变化，重新撑开
+  document.querySelectorAll('#qResult img, #qStem img').forEach(img => {
+    if (!img.complete) img.addEventListener('load', padDock, { once: true });
+  });
+  // 展开后自动滚到选项区域，让选项在 dock 上方可见
+  const box = $('qResult');
+  if (box.classList.contains('show') && box.innerHTML.trim()) {
+    setTimeout(() => {
+      const opts = $('qOpts');
+      if (opts && opts.children.length) opts.scrollIntoView({ block: 'start' });
+    }, 500);
+  }
 }
 
 function renderCard() {
@@ -1501,6 +1529,21 @@ function initControls() {
   // 点答题区里的标签后自动收起（手机端）
   document.addEventListener('click', e => {
     if (e.target.closest && e.target.closest('.vb-tab') && window.innerWidth <= 959) toggleVB(false);
+    // 点击题目/解析图片放大预览
+    if (e.target.tagName === 'IMG' && e.target.closest('.qstem, .result, .opt')) {
+      e.preventDefault();
+      let pv = $('imgPreview');
+      if (!pv) {
+        pv = document.createElement('div');
+        pv.id = 'imgPreview';
+        pv.className = 'img-preview';
+        pv.innerHTML = '<img>';
+        document.body.appendChild(pv);
+        pv.onclick = () => pv.classList.remove('show');
+      }
+      pv.querySelector('img').src = e.target.src;
+      pv.classList.add('show');
+    }
   });
   $('fillInput').onkeydown = e => {
     if (e.key === 'Enter') {
@@ -1609,6 +1652,7 @@ $('vbAdd').onclick = addView;
 applyView(state.views[state.curView]);
 renderViewBar();
 padDock();
+window.addEventListener('resize', padDock);
 </script>
 </body>
 </html>
